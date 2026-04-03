@@ -32,6 +32,9 @@ body {
     font-size: 1.5rem;
     font-weight: 700;
     color: #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .nav-links {
@@ -54,6 +57,18 @@ body {
     max-width: 1200px;
     margin: 2rem auto;
     padding: 0 2rem;
+}
+
+.company-name-header {
+    font-size: 0.9rem;
+    color: #3b82f6;
+    font-weight: normal;
+}
+
+.company-name-header::before {
+    content: "•";
+    margin-right: 0.5rem;
+    color: #cbd5e1;
 }
 
 .dashboard-header {
@@ -371,3 +386,4 @@ body {
         padding: 0;
     }
 }
+

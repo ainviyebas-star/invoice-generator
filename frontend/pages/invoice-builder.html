@@ -201,6 +201,8 @@
             background: #cbd5e1;
         }
         
+
+        
         @media (max-width: 768px) {
             .items-header, .item-row {
                 grid-template-columns: 1fr;
@@ -234,14 +236,14 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <h1 class="logo">📄 InvoicePro</h1>
+            <h1 class="logo">📄 InvoicePro <span id="companyNameHeader" class="company-name-header"></span></h1>
             <div class="nav-links">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="invoice-builder.html">Create Invoice</a>
-    <a href="invoices.html">Invoices</a>
-    <a href="customers.html">Customers</a>
-    <a href="templates.html">Templates</a>
-    <a href="settings.html">⚙️ Settings</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="invoice-builder.html" class="active">Create Invoice</a>
+                <a href="invoices.html">Invoices</a>
+                <a href="customers.html">Customers</a>
+                <a href="templates.html">Templates</a>
+                <a href="settings.html">⚙️ Settings</a>
             </div>
         </div>
     </nav>
@@ -360,8 +362,25 @@
     </main>
 
     <script src="../js/api.js"></script>
+    <script src="../js/header.js"></script>
     <script>
         let items = [];
+        
+        // Display company name in header
+        function displayCompanyName() {
+            const settings = localStorage.getItem('companySettings');
+            if (settings) {
+                try {
+                    const company = JSON.parse(settings);
+                    const nameElement = document.getElementById('companyNameHeader');
+                    if (nameElement && company.name) {
+                        nameElement.textContent = `- ${company.name}`;
+                    }
+                } catch(e) {
+                    console.error('Error parsing company settings:', e);
+                }
+            }
+        }
         
         // Add new item
         function addItem() {
@@ -610,6 +629,7 @@
         
         // Initialize page
         async function init() {
+            displayCompanyName();
             await loadCustomers();
             await loadTemplates();
             addItem(); // Add one empty item row

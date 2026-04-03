@@ -38,11 +38,7 @@
             align-items: center;
         }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #3b82f6;
-        }
+
 
         .nav-links {
             display: flex;
@@ -276,7 +272,7 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <h1 class="logo">📄 InvoicePro</h1>
+            <h1 class="logo">📄 InvoicePro <span id="companyNameHeader" class="company-name-header"></span></h1>
             <div class="nav-links">
                 <a href="dashboard.html" class="active">Dashboard</a>
                 <a href="invoice-builder.html">Create Invoice</a>
@@ -351,25 +347,44 @@
     </main>
 
     <script src="../js/api.js"></script>
+    <script src="../js/header.js"></script>
     <script>
         let revenueChart = null;
         let statusChart = null;
 
         // Display company name from localStorage
-        function displayCompanyName() {
+ 
+async function displayCompanyName() {
+    try {
+        if (typeof getCompanyNameFromAPI !== 'undefined') {
+            const companyName = await getCompanyNameFromAPI();
+            const nameElement = document.getElementById('companyNameHeader');
+            if (nameElement && companyName) {
+                nameElement.textContent = `- ${companyName}`;
+            }
+            const welcomeElement = document.getElementById('companyNameDisplay');
+            if (welcomeElement && companyName) {
+                welcomeElement.textContent = companyName;
+            }
+        } else {
             const settings = localStorage.getItem('companySettings');
             if (settings) {
-                try {
-                    const company = JSON.parse(settings);
-                    const nameElement = document.getElementById('companyNameDisplay');
-                    if (nameElement) {
-                        nameElement.textContent = company.name || 'Your Business';
-                    }
-                } catch(e) {
-                    console.error('Error parsing company settings:', e);
+                const company = JSON.parse(settings);
+                const nameElement = document.getElementById('companyNameHeader');
+                if (nameElement && company.name) {
+                    nameElement.textContent = `- ${company.name}`;
+                }
+                const welcomeElement = document.getElementById('companyNameDisplay');
+                if (welcomeElement && company.name) {
+                    welcomeElement.textContent = company.name;
                 }
             }
         }
+    } catch(e) {
+        console.error('Error:', e);
+    }
+}
+
 
         async function loadDashboard() {
             try {
