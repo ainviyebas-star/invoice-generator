@@ -1,9 +1,11 @@
 // frontend/js/api.js
-// Use relative path for proxy - no hardcoded URL needed!
-const API_BASE = '/.netlify/functions/api-proxy';
+// Load config first (will be available from window.APP_CONFIG)
+const API_BASE = window.APP_CONFIG?.API_BASE || 'https://invoice-backend.atologbook.workers.dev/api';
 
 console.log('🚀 API Module Loaded');
-console.log('📍 API Base URL (via Netlify Proxy):', API_BASE);
+console.log('📍 API Base URL:', API_BASE);
+
+// Rest of your API code...
 
 async function apiRequest(endpoint, options = {}) {
     try {
