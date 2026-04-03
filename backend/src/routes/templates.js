@@ -68,32 +68,52 @@ export async function handleTemplates(request, env) {
             return jsonResponse(template);
         }
         
-        // POST /api/templates - Create new template
-        if (method === 'POST' && (path === '' || path === '/')) {
-            const body = await request.json();
-            const uuid = uuidv4();
-            
-            // Insert template
-            const result = await env.DB.prepare(`
-                INSERT INTO templates (uuid, company_id, name, description, is_default)
-                VALUES (?, ?, ?, ?, ?)
-            `).bind(uuid, body.company_id || 1, body.name, body.description || '', 0).run();
-            
-            const templateId = result.meta.last_row_id;
-            
-            // Insert fields
-            if (body.fields && body.fields.length > 0) {
-                for (let i = 0; i < body.fields.length; i++) {
-                    const field = body.fields[i];
-                    await env.DB.prepare(`
-                        INSERT INTO template_fields (template_id, field_key, field_label, field_type, is_required, sort_order)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    `).bind(templateId, field.key, field.label, field.type || 'text', field.required ? 1 : 0, i).run();
-                }
-            }
-            
-            return jsonResponse({ success: true, id: templateId, uuid: uuid }, 201);
+ // POST /api/templates - Create new template
+if (method === 'POST' && (path === '' || path === '/')) {
+    const body = await request.json();
+    const uuid = uuidv4();
+    
+    console.log('Creating template with data:', body);
+    
+    // Insert template
+    const result = await env.DB.prepare(`
+        INSERT INTO templates (uuid, company_id, name, description, category, primary_color, secondary_color, is_default, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+        uuid, 
+        body.company_id || 1, 
+        body.name, 
+        body.description || '', 
+        body.category || 'custom',
+        body.primary_color || '#8b5cf6',
+        body.secondary_color || '#6d28d9',
+        0,
+        1
+    ).run();
+    
+    const templateId = result.meta.last_row_id;
+    
+    // Insert fields
+    if (body.fields && body.fields.length > 0) {
+        for (let i = 0; i < body.fields.length; i++) {
+            const field = body.fields[i];
+            await env.DB.prepare(`
+                INSERT INTO template_fields (template_id, field_key, field_label, field_type, is_required, sort_order, width)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+                templateId, 
+                field.field_key, 
+                field.field_label, 
+                field.field_type || 'text', 
+                field.is_required ? 1 : 0, 
+                i,
+                100
+            ).run();
         }
+    }
+    
+    return jsonResponse({ success: true, id: templateId, uuid: uuid }, 201);
+}
         
         // PUT /api/templates/:id - Update template
         if (method === 'PUT' && path.match(/\/\d+$/)) {

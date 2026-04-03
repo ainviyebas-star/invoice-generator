@@ -1,11 +1,8 @@
-// frontend/js/api.js
-// Load config first (will be available from window.APP_CONFIG)
-const API_BASE = window.APP_CONFIG?.API_BASE || 'https://invoice-backend.atologbook.workers.dev/api';
+// frontend/js/api.js - Complete API Client
+const API_BASE = 'https://invoice-backend.atologbook.workers.dev/api';
 
 console.log('🚀 API Module Loaded');
 console.log('📍 API Base URL:', API_BASE);
-
-// Rest of your API code...
 
 async function apiRequest(endpoint, options = {}) {
     try {
@@ -21,10 +18,6 @@ async function apiRequest(endpoint, options = {}) {
         });
         
         console.log(`📥 Response Status:`, response.status);
-        
-        if (response.status === 404) {
-            throw new Error(`API endpoint not found. Tried: ${url}`);
-        }
         
         if (!response.ok) {
             const errorText = await response.text();
@@ -61,13 +54,12 @@ const CustomerAPI = {
         return apiRequest(`/customers/${id}`);
     },
     
-    create: async (data) => {
+    create: (data) => {
         console.log('➕ Creating customer:', data);
-        const response = await apiRequest('/customers', { 
+        return apiRequest('/customers', { 
             method: 'POST', 
             body: JSON.stringify(data) 
         });
-        return response;
     },
     
     update: (id, data) => {
@@ -98,13 +90,12 @@ const InvoiceAPI = {
         return apiRequest(`/invoices/${id}`);
     },
     
-    create: async (data) => {
+    create: (data) => {
         console.log('➕ Creating invoice:', data);
-        const response = await apiRequest('/invoices', { 
+        return apiRequest('/invoices', { 
             method: 'POST', 
             body: JSON.stringify(data) 
         });
-        return response;
     },
     
     update: (id, data) => {
@@ -123,7 +114,7 @@ const InvoiceAPI = {
     },
 };
 
-// Template API
+// Template API - Complete with all CRUD methods
 const TemplateAPI = {
     getAll: () => {
         console.log('📋 Fetching all templates...');
@@ -139,6 +130,36 @@ const TemplateAPI = {
         console.log(`📋 Fetching fields for template ${id}...`);
         return apiRequest(`/templates/${id}/fields`);
     },
+    
+    create: (data) => {
+        console.log('➕ Creating template:', data);
+        return apiRequest('/templates', { 
+            method: 'POST', 
+            body: JSON.stringify(data) 
+        });
+    },
+    
+    update: (id, data) => {
+        console.log(`✏️ Updating template ${id}...`, data);
+        return apiRequest(`/templates/${id}`, { 
+            method: 'PUT', 
+            body: JSON.stringify(data) 
+        });
+    },
+    
+    delete: (id) => {
+        console.log(`🗑️ Deleting template ${id}...`);
+        return apiRequest(`/templates/${id}`, { 
+            method: 'DELETE' 
+        });
+    },
+    
+    setDefault: (id) => {
+        console.log(`⭐ Setting template ${id} as default...`);
+        return apiRequest(`/templates/${id}/default`, { 
+            method: 'PUT' 
+        });
+    }
 };
 
 // Make all APIs available globally
@@ -150,3 +171,4 @@ console.log('✅ All APIs ready');
 console.log('🔗 CustomerAPI:', typeof window.CustomerAPI);
 console.log('🔗 InvoiceAPI:', typeof window.InvoiceAPI);
 console.log('🔗 TemplateAPI:', typeof window.TemplateAPI);
+console.log('🔗 TemplateAPI.create:', typeof window.TemplateAPI?.create);
