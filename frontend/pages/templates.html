@@ -5,387 +5,671 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice Templates - InvoicePro</title>
     <link rel="stylesheet" href="../css/styles.css">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <h1 class="logo">📄 InvoicePro</h1>
-            <div class="nav-links">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="invoice-builder.html">Create Invoice</a>
-    <a href="invoices.html">Invoices</a>  <!-- Add this line -->
-    <a href="customers.html">Customers</a>
-    <a href="templates.html">Templates</a>
-            </div>
-        </div>
-    </nav>
-
-    <main class="container">
-        <div class="dashboard-header">
-            <h2>Invoice Templates</h2>
-            <button class="btn btn-primary" onclick="openTemplateModal()">+ New Template</button>
-        </div>
-
-        <!-- Templates Grid -->
-        <div class="templates-grid" id="templatesGrid">
-            <div class="loading">Loading templates...</div>
-        </div>
-    </main>
-
-    <!-- Template Modal -->
-    <div id="templateModal" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h3 id="modalTitle">Create Template</h3>
-                <span class="close" onclick="closeTemplateModal()">&times;</span>
-            </div>
-            <form id="templateForm">
-                <input type="hidden" id="templateId">
-                <div class="form-group">
-                    <label>Template Name *</label>
-                    <input type="text" id="templateName" required>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="templateDescription" rows="2"></textarea>
-                </div>
-                
-                <h3 style="margin-top: 1rem;">Template Fields</h3>
-                <div id="fieldsContainer">
-                    <div class="field-row">
-                        <input type="text" placeholder="Field Key" class="field-key">
-                        <input type="text" placeholder="Field Label" class="field-label">
-                        <select class="field-type">
-                            <option value="text">Text</option>
-                            <option value="textarea">Textarea</option>
-                            <option value="date">Date</option>
-                            <option value="number">Number</option>
-                        </select>
-                        <label style="display: flex; align-items: center; gap: 0.5rem;">
-                            <input type="checkbox" class="field-required"> Required
-                        </label>
-                        <button type="button" class="btn-icon" onclick="removeField(this)">✕</button>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-secondary" onclick="addField()" style="margin: 1rem 0;">+ Add Field</button>
-                
-                <div class="modal-buttons">
-                    <button type="submit" class="btn btn-primary">Save Template</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeTemplateModal()">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <style>
+        /* Template specific styles */
+        .templates-header {
+            margin-bottom: 2rem;
+        }
+        
+        .template-categories {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1rem;
+        }
+        
+        .category-btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.2s;
+            border-radius: 8px;
+        }
+        
+        .category-btn:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        
+        .category-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
         .templates-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 2rem;
             margin-top: 2rem;
         }
         
         .template-card {
             background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            transition: all 0.2s;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            transition: all 0.3s;
             cursor: pointer;
+            border: 2px solid transparent;
         }
         
         .template-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
         }
         
-        .template-card.default {
-            border: 2px solid #3b82f6;
-            background: #f0f9ff;
+        .template-card.selected {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
         }
         
-        .template-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 1rem;
+        .template-preview {
+            height: 280px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .template-preview.minimal {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .template-preview.modern {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .template-preview.corporate {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+        
+        .template-preview.creative {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .preview-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            background: rgba(255,255,255,0.95);
+            transform: translateY(100%);
+            transition: transform 0.3s;
+        }
+        
+        .template-card:hover .preview-content {
+            transform: translateY(0);
+        }
+        
+        .template-info {
+            padding: 1.5rem;
         }
         
         .template-name {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #1e293b;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
-        .default-badge {
+        .template-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        .template-badge.default {
             background: #3b82f6;
             color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
         }
         
         .template-description {
             color: #64748b;
+            font-size: 0.875rem;
             margin-bottom: 1rem;
-            font-size: 0.9rem;
+            line-height: 1.5;
         }
         
-        .template-fields {
-            margin: 1rem 0;
-            padding: 0.5rem;
-            background: #f8fafc;
-            border-radius: 8px;
-            font-size: 0.85rem;
-        }
-        
-        .field-tag {
-            display: inline-block;
-            background: #e2e8f0;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            margin: 0.2rem;
+        .template-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
             font-size: 0.75rem;
+            color: #64748b;
         }
         
         .template-actions {
             display: flex;
             gap: 0.5rem;
             margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e2e8f0;
         }
         
-        .modal-large {
-            max-width: 800px !important;
-        }
-        
-        .field-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr auto auto;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-            align-items: center;
-        }
-        
-        .field-row input, .field-row select {
-            padding: 0.5rem;
+        .btn-outline {
+            background: transparent;
             border: 1px solid #cbd5e1;
-            border-radius: 6px;
+            color: #475569;
+        }
+        
+        .btn-outline:hover {
+            background: #f8fafc;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        /* Template Editor Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            max-width: 900px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .form-section {
+            margin-bottom: 2rem;
+        }
+        
+        .form-section h3 {
+            margin-bottom: 1rem;
+            color: #1e293b;
+        }
+        
+        .color-picker {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .fields-list {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .field-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: move;
+        }
+        
+        .field-item:last-child {
+            border-bottom: none;
+        }
+        
+        .field-item:hover {
+            background: #f8fafc;
+        }
+        
+        .drag-handle {
+            cursor: grab;
+            color: #94a3b8;
+            margin-right: 1rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .badge-required {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .badge-optional {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        /* Template Preview Styles */
+        .template-preview-modal {
+            max-width: 800px;
+        }
+        
+        .invoice-preview-demo {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
         
         @media (max-width: 768px) {
-            .field-row {
+            .templates-grid {
                 grid-template-columns: 1fr;
-                gap: 0.5rem;
             }
         }
     </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">📄 InvoicePro</h1>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="invoice-builder.html">Create Invoice</a>
+                <a href="invoices.html">Invoices</a>
+                <a href="customers.html">Customers</a>
+                <a href="templates.html" class="active">Templates</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="templates-header">
+            <div class="dashboard-header">
+                <h2>Invoice Templates</h2>
+                <button class="btn btn-primary" onclick="openTemplateEditor()">+ Create Custom Template</button>
+            </div>
+            
+            <div class="template-categories">
+                <button class="category-btn active" data-category="all">All Templates</button>
+                <button class="category-btn" data-category="minimal">Minimal</button>
+                <button class="category-btn" data-category="modern">Modern</button>
+                <button class="category-btn" data-category="corporate">Corporate</button>
+                <button class="category-btn" data-category="creative">Creative</button>
+            </div>
+        </div>
+
+        <div id="templatesGrid" class="templates-grid">
+            <!-- Templates will be loaded here -->
+        </div>
+    </main>
+
+    <!-- Template Editor Modal -->
+    <div id="templateEditorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Create Custom Template</h3>
+            </div>
+            <div class="modal-body">
+                <form id="templateForm">
+                    <div class="form-section">
+                        <h3>Basic Information</h3>
+                        <div class="form-group">
+                            <label>Template Name *</label>
+                            <input type="text" id="templateName" required placeholder="e.g., Modern Professional">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="templateDescription" rows="2" placeholder="Describe when to use this template"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="templateCategory">
+                                <option value="minimal">Minimal</option>
+                                <option value="modern">Modern</option>
+                                <option value="corporate">Corporate</option>
+                                <option value="creative">Creative</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Primary Color</label>
+                            <input type="color" id="primaryColor" value="#3b82f6">
+                        </div>
+                        <div class="form-group">
+                            <label>Secondary Color</label>
+                            <input type="color" id="secondaryColor" value="#1e293b">
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3>Template Fields (Drag to reorder)</h3>
+                        <div id="fieldsContainer" class="fields-list">
+                            <!-- Dynamic fields will appear here -->
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addField()" style="margin-top: 1rem;">+ Add Custom Field</button>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3>Preview</h3>
+                        <div id="livePreview" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; background: #f8fafc;">
+                            <!-- Live preview will be shown here -->
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                        <button type="button" class="btn btn-secondary" onclick="closeTemplateEditor()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Template</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <script src="../js/api.js"></script>
     <script>
         let templates = [];
+        let editingTemplateId = null;
+        let fields = [];
+        
+        // Predefined templates
+        const predefinedTemplates = [
+            {
+                id: 'preview_1',
+                name: 'Minimalist',
+                category: 'minimal',
+                description: 'Clean and simple design perfect for freelancers',
+                primaryColor: '#10b981',
+                secondaryColor: '#1e293b',
+                fields: ['invoice_number', 'date', 'client_name', 'description', 'amount']
+            },
+            {
+                id: 'preview_2',
+                name: 'Modern Dark',
+                category: 'modern',
+                description: 'Sleek modern design with dark accents',
+                primaryColor: '#6366f1',
+                secondaryColor: '#0f172a',
+                fields: ['invoice_number', 'date', 'client_name', 'description', 'amount', 'tax']
+            },
+            {
+                id: 'preview_3',
+                name: 'Corporate Pro',
+                category: 'corporate',
+                description: 'Professional design for enterprises',
+                primaryColor: '#1e40af',
+                secondaryColor: '#334155',
+                fields: ['invoice_number', 'date', 'po_number', 'client_name', 'description', 'amount', 'tax', 'notes']
+            },
+            {
+                id: 'preview_4',
+                name: 'Creative Studio',
+                category: 'creative',
+                description: 'Bold design for creative agencies',
+                primaryColor: '#ec4899',
+                secondaryColor: '#4c1d95',
+                fields: ['invoice_number', 'date', 'project_name', 'client_name', 'description', 'amount']
+            }
+        ];
         
         async function loadTemplates() {
             try {
-                templates = await TemplateAPI.getAll();
+                if (typeof TemplateAPI !== 'undefined') {
+                    const apiTemplates = await TemplateAPI.getAll();
+                    templates = apiTemplates || [];
+                }
                 renderTemplates();
             } catch (error) {
                 console.error('Error loading templates:', error);
-                document.getElementById('templatesGrid').innerHTML = '<div class="loading">Error loading templates</div>';
+                renderPredefinedTemplates();
             }
         }
         
-        function renderTemplates() {
+        function renderPredefinedTemplates() {
             const grid = document.getElementById('templatesGrid');
-            
-            if (templates.length === 0) {
-                grid.innerHTML = '<div class="loading">No templates yet. Create your first template!</div>';
-                return;
-            }
-            
-            grid.innerHTML = templates.map(template => `
-                <div class="template-card ${template.is_default ? 'default' : ''}" onclick="editTemplate(${template.id})">
-                    <div class="template-header">
-                        <div class="template-name">${escapeHtml(template.name)}</div>
-                        ${template.is_default ? '<span class="default-badge">Default</span>' : ''}
+            grid.innerHTML = predefinedTemplates.map(template => `
+                <div class="template-card" data-category="${template.category}" onclick="previewTemplate('${template.id}')">
+                    <div class="template-preview ${template.category}">
+                        <div class="preview-content">
+                            <small>Click to preview</small>
+                        </div>
                     </div>
-                    <div class="template-description">${escapeHtml(template.description) || 'No description'}</div>
-                    <div class="template-fields">
-                        <strong>${template.fields_count || 0} fields</strong>
-                    </div>
-                    <div class="template-actions" onclick="event.stopPropagation()">
-                        <button class="btn-small btn-secondary" onclick="editTemplate(${template.id})">✏️ Edit</button>
-                        <button class="btn-small btn-secondary" onclick="deleteTemplate(${template.id})">🗑️ Delete</button>
-                        ${!template.is_default ? `<button class="btn-small btn-primary" onclick="setAsDefault(${template.id})">⭐ Set as Default</button>` : ''}
+                    <div class="template-info">
+                        <div class="template-name">
+                            ${template.name}
+                            <span class="template-badge">Predefined</span>
+                        </div>
+                        <div class="template-description">${template.description}</div>
+                        <div class="template-meta">
+                            <span>🎨 ${template.category}</span>
+                            <span>📋 ${template.fields.length} fields</span>
+                        </div>
+                        <div class="template-actions">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); useTemplate('${template.id}')">Use Template</button>
+                            <button class="btn btn-outline" onclick="event.stopPropagation(); customizeTemplate('${template.id}')">Customize</button>
+                        </div>
                     </div>
                 </div>
             `).join('');
         }
         
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-        
-        function addField() {
-            const container = document.getElementById('fieldsContainer');
-            const fieldRow = document.createElement('div');
-            fieldRow.className = 'field-row';
-            fieldRow.innerHTML = `
-                <input type="text" placeholder="Field Key (e.g., company_name)" class="field-key">
-                <input type="text" placeholder="Field Label (e.g., Company Name)" class="field-label">
-                <select class="field-type">
-                    <option value="text">Text</option>
-                    <option value="textarea">Textarea</option>
-                    <option value="date">Date</option>
-                    <option value="number">Number</option>
-                </select>
-                <label style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="checkbox" class="field-required"> Required
-                </label>
-                <button type="button" class="btn-icon" onclick="removeField(this)">✕</button>
-            `;
-            container.appendChild(fieldRow);
-        }
-        
-        function removeField(button) {
-            button.closest('.field-row').remove();
-        }
-        
-        function openTemplateModal(template = null) {
-            const modal = document.getElementById('templateModal');
-            const title = document.getElementById('modalTitle');
-            const fieldsContainer = document.getElementById('fieldsContainer');
+        function renderTemplates() {
+            const grid = document.getElementById('templatesGrid');
+            const activeCategory = document.querySelector('.category-btn.active')?.dataset.category || 'all';
             
-            if (template) {
-                title.textContent = 'Edit Template';
-                document.getElementById('templateId').value = template.id;
-                document.getElementById('templateName').value = template.name;
-                document.getElementById('templateDescription').value = template.description || '';
-                
-                // Clear existing fields
-                fieldsContainer.innerHTML = '';
-                
-                // Add field rows for existing fields
-                if (template.fields && template.fields.length > 0) {
-                    template.fields.forEach(field => {
-                        const fieldRow = document.createElement('div');
-                        fieldRow.className = 'field-row';
-                        fieldRow.innerHTML = `
-                            <input type="text" placeholder="Field Key" class="field-key" value="${escapeHtml(field.field_key)}">
-                            <input type="text" placeholder="Field Label" class="field-label" value="${escapeHtml(field.field_label)}">
-                            <select class="field-type">
-                                <option value="text" ${field.field_type === 'text' ? 'selected' : ''}>Text</option>
-                                <option value="textarea" ${field.field_type === 'textarea' ? 'selected' : ''}>Textarea</option>
-                                <option value="date" ${field.field_type === 'date' ? 'selected' : ''}>Date</option>
-                                <option value="number" ${field.field_type === 'number' ? 'selected' : ''}>Number</option>
-                            </select>
-                            <label style="display: flex; align-items: center; gap: 0.5rem;">
-                                <input type="checkbox" class="field-required" ${field.is_required ? 'checked' : ''}> Required
-                            </label>
-                            <button type="button" class="btn-icon" onclick="removeField(this)">✕</button>
-                        `;
-                        fieldsContainer.appendChild(fieldRow);
-                    });
-                }
-            } else {
-                title.textContent = 'Create Template';
-                document.getElementById('templateForm').reset();
-                document.getElementById('templateId').value = '';
-                fieldsContainer.innerHTML = '';
-                addField(); // Add one empty field row
+            let filteredTemplates = templates;
+            if (activeCategory !== 'all') {
+                filteredTemplates = templates.filter(t => t.category === activeCategory);
             }
             
+            if (filteredTemplates.length === 0 && templates.length === 0) {
+                renderPredefinedTemplates();
+                return;
+            }
+            
+            grid.innerHTML = filteredTemplates.map(template => `
+                <div class="template-card ${template.is_default ? 'selected' : ''}" data-category="${template.category}">
+                    <div class="template-preview" style="background: linear-gradient(135deg, ${template.primary_color || '#667eea'} 0%, ${template.secondary_color || '#764ba2'} 100%);">
+                        <div class="preview-content">
+                            <small>${template.name}</small>
+                        </div>
+                    </div>
+                    <div class="template-info">
+                        <div class="template-name">
+                            ${template.name}
+                            ${template.is_default ? '<span class="template-badge default">Default</span>' : ''}
+                        </div>
+                        <div class="template-description">${template.description || 'Custom template'}</div>
+                        <div class="template-meta">
+                            <span>🎨 ${template.category || 'custom'}</span>
+                            <span>📋 ${template.fields?.length || 0} fields</span>
+                            <span>🔄 ${template.usage_count || 0} uses</span>
+                        </div>
+                        <div class="template-actions">
+                            <button class="btn btn-primary" onclick="useTemplate(${template.id})">Use Template</button>
+                            <button class="btn btn-outline" onclick="editTemplate(${template.id})">Edit</button>
+                            <button class="btn btn-outline" onclick="deleteTemplate(${template.id})">Delete</button>
+                            ${!template.is_default ? `<button class="btn btn-outline" onclick="setAsDefault(${template.id})">Set as Default</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function openTemplateEditor(template = null) {
+            const modal = document.getElementById('templateEditorModal');
+            document.getElementById('modalTitle').textContent = template ? 'Edit Template' : 'Create Custom Template';
+            
+            if (template) {
+                document.getElementById('templateName').value = template.name;
+                document.getElementById('templateDescription').value = template.description || '';
+                document.getElementById('templateCategory').value = template.category || 'modern';
+                document.getElementById('primaryColor').value = template.primary_color || '#3b82f6';
+                document.getElementById('secondaryColor').value = template.secondary_color || '#1e293b';
+                fields = template.fields || [];
+            } else {
+                document.getElementById('templateForm').reset();
+                fields = [
+                    { key: 'invoice_number', label: 'Invoice Number', type: 'text', required: true },
+                    { key: 'issue_date', label: 'Issue Date', type: 'date', required: true },
+                    { key: 'due_date', label: 'Due Date', type: 'date', required: true },
+                    { key: 'client_name', label: 'Client Name', type: 'text', required: true }
+                ];
+            }
+            
+            renderFieldsList();
             modal.style.display = 'block';
         }
         
-        function closeTemplateModal() {
-            document.getElementById('templateModal').style.display = 'none';
+        function renderFieldsList() {
+            const container = document.getElementById('fieldsContainer');
+            container.innerHTML = fields.map((field, idx) => `
+                <div class="field-item" draggable="true" data-index="${idx}">
+                    <div class="drag-handle">⋮⋮</div>
+                    <div style="flex: 1;">
+                        <strong>${field.label}</strong>
+                        <div style="font-size: 0.75rem; color: #64748b;">${field.key}</div>
+                    </div>
+                    <span class="badge ${field.required ? 'badge-required' : 'badge-optional'}">
+                        ${field.required ? 'Required' : 'Optional'}
+                    </span>
+                    <button type="button" onclick="removeField(${idx})" style="background: none; border: none; cursor: pointer;">✕</button>
+                </div>
+            `).join('');
+            
+            updateLivePreview();
+        }
+        
+        function addField() {
+            const newKey = `custom_field_${fields.length + 1}`;
+            fields.push({
+                key: newKey,
+                label: 'Custom Field',
+                type: 'text',
+                required: false
+            });
+            renderFieldsList();
+        }
+        
+        function removeField(index) {
+            fields.splice(index, 1);
+            renderFieldsList();
+        }
+        
+        function updateLivePreview() {
+            const preview = document.getElementById('livePreview');
+            const primaryColor = document.getElementById('primaryColor').value;
+            const secondaryColor = document.getElementById('secondaryColor').value;
+            
+            preview.innerHTML = `
+                <div style="background: white; border-radius: 8px; overflow: hidden;">
+                    <div style="background: ${primaryColor}; padding: 1rem; color: white;">
+                        <h4 style="margin: 0;">INVOICE PREVIEW</h4>
+                    </div>
+                    <div style="padding: 1rem;">
+                        ${fields.map(field => `
+                            <div style="margin-bottom: 0.5rem; padding: 0.5rem; background: white; border-radius: 4px;">
+                                <strong>${field.label}:</strong> 
+                                <span style="color: #64748b;">[${field.type}]</span>
+                            </div>
+                        `).join('')}
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                            <div style="text-align: right;">
+                                <strong>Total:</strong> $0.00
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
         
         async function saveTemplate() {
-            const id = document.getElementById('templateId').value;
-            const fields = [];
-            
-            document.querySelectorAll('.field-row').forEach(row => {
-                fields.push({
-                    field_key: row.querySelector('.field-key').value,
-                    field_label: row.querySelector('.field-label').value,
-                    field_type: row.querySelector('.field-type').value,
-                    is_required: row.querySelector('.field-required').checked ? 1 : 0
-                });
-            });
-            
-            const data = {
-                company_id: 1,
+            const templateData = {
                 name: document.getElementById('templateName').value,
                 description: document.getElementById('templateDescription').value,
-                fields: fields
+                category: document.getElementById('templateCategory').value,
+                primary_color: document.getElementById('primaryColor').value,
+                secondary_color: document.getElementById('secondaryColor').value,
+                fields: fields,
+                company_id: 1
             };
             
             try {
-                if (id) {
-                    await TemplateAPI.update(id, data);
+                if (editingTemplateId) {
+                    await TemplateAPI.update(editingTemplateId, templateData);
+                    alert('Template updated successfully!');
                 } else {
-                    await TemplateAPI.create(data);
+                    await TemplateAPI.create(templateData);
+                    alert('Template created successfully!');
                 }
-                closeTemplateModal();
-                await loadTemplates();
-                alert('Template saved successfully!');
+                closeTemplateEditor();
+                loadTemplates();
             } catch (error) {
                 alert('Error saving template: ' + error.message);
             }
         }
         
-        async function editTemplate(id) {
-            try {
-                const template = await TemplateAPI.get(id);
-                openTemplateModal(template);
-            } catch (error) {
-                alert('Error loading template: ' + error.message);
+        function useTemplate(templateId) {
+            localStorage.setItem('selectedTemplate', templateId);
+            window.location.href = 'invoice-builder.html';
+        }
+        
+        function customizeTemplate(templateId) {
+            const template = predefinedTemplates.find(t => t.id === templateId);
+            if (template) {
+                openTemplateEditor(template);
             }
         }
         
-        async function deleteTemplate(id) {
-            if (confirm('Are you sure you want to delete this template?')) {
-                try {
-                    await TemplateAPI.delete(id);
-                    await loadTemplates();
-                    alert('Template deleted successfully!');
-                } catch (error) {
-                    alert('Error deleting template: ' + error.message);
-                }
+        function previewTemplate(templateId) {
+            const template = predefinedTemplates.find(t => t.id === templateId);
+            if (template) {
+                alert(`Template: ${template.name}\n\n${template.description}\n\nFields: ${template.fields.join(', ')}`);
             }
         }
         
-        async function setAsDefault(id) {
-            try {
-                await TemplateAPI.setDefault(id);
-                await loadTemplates();
-                alert('Default template updated!');
-            } catch (error) {
-                alert('Error setting default template: ' + error.message);
-            }
+        function closeTemplateEditor() {
+            document.getElementById('templateEditorModal').style.display = 'none';
+            editingTemplateId = null;
         }
         
+        // Event listeners
         document.getElementById('templateForm').addEventListener('submit', (e) => {
             e.preventDefault();
             saveTemplate();
         });
         
+        document.getElementById('primaryColor').addEventListener('change', updateLivePreview);
+        document.getElementById('secondaryColor').addEventListener('change', updateLivePreview);
+        
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderTemplates();
+            });
+        });
+        
+        // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('templateModal');
+            const modal = document.getElementById('templateEditorModal');
             if (event.target === modal) {
-                closeTemplateModal();
+                closeTemplateEditor();
             }
         }
         
+        // Initialize
         loadTemplates();
     </script>
 </body>

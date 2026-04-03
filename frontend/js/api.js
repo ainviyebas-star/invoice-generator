@@ -1,8 +1,9 @@
-// frontend/js/api.js - Complete with all APIs
-const API_BASE = 'https://invoice-backend.atologbook.workers.dev/api';
+// frontend/js/api.js
+// Use relative path for proxy - no hardcoded URL needed!
+const API_BASE = '/.netlify/functions/api-proxy';
 
 console.log('🚀 API Module Loaded');
-console.log('📍 API Base URL:', API_BASE);
+console.log('📍 API Base URL (via Netlify Proxy):', API_BASE);
 
 async function apiRequest(endpoint, options = {}) {
     try {

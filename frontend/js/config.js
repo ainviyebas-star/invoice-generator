@@ -1,12 +1,15 @@
 // frontend/js/config.js
-// Use Netlify's template syntax
+// Netlify will replace %VITE_API_URL% with your environment variable
 window.APP_CONFIG = {
     API_BASE: '%VITE_API_URL%'
 };
 
-// If the placeholder isn't replaced, use fallback
-if (window.APP_CONFIG.API_BASE === '%VITE_API_URL%') {
-    window.APP_CONFIG.API_BASE = 'https://invoice-backend.atologbook.workers.dev/api';
+// Fallback for local development
+if (window.APP_CONFIG.API_BASE === '%VITE_API_URL%' || window.APP_CONFIG.API_BASE.includes('%')) {
+    // Local development fallback
+    window.APP_CONFIG.API_BASE = window.location.hostname === 'localhost' 
+        ? 'http://localhost:8787/api'
+        : 'https://invoice-backend.atologbook.workers.dev/api';
 }
 
-console.log('App Config loaded:', window.APP_CONFIG);
+console.log('🔧 App Config Loaded:', window.APP_CONFIG);

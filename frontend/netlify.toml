@@ -1,33 +1,20 @@
-
-    # frontend/netlify.toml
 [build]
   publish = "."
   command = ""
 
-# Enable variable replacement
-[build.processing]
-  skip_processing = false
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
-[build.processing.html]
-  pretty_urls = true
-
-# Context-specific variables
-[context.production]
-  [context.production.environment]
-    VITE_API_URL = "https://invoice-backend.atologbook.workers.dev/api"
-
-[context.deploy-preview]
-  [context.deploy-preview.environment]
-    VITE_API_URL = "https://invoice-backend.atologbook.workers.dev/api"
-
-# Headers and redirects
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    Cache-Control = "public, max-age=0, must-revalidate"
+[context.production.environment]
+  VITE_API_URL = "https://invoice-backend.atologbook.workers.dev/api"
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/api/*"
+  to = "/.netlify/functions/api-proxy/:splat"
   status = 200
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
