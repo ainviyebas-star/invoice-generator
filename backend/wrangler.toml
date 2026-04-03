@@ -1,0 +1,14 @@
+name = "invoice-backend"
+main = "src/index.js"
+compatibility_date = "2024-02-08"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "invoice-db"
+database_id = "2d509429-92b6-40c3-a464-2ea23f2dba54"  # Replace after creating D1 DB
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.staging]
+vars = { ENVIRONMENT = "staging" }

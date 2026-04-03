@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers - InvoicePro</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">📄 InvoicePro</h1>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="invoice-builder.html">Create Invoice</a>
+                <a href="customers.html" class="active">Customers</a>
+                <a href="templates.html">Templates</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="dashboard-header">
+            <h2>Customer Management</h2>
+            <button class="btn btn-primary" onclick="openCustomerModal()">+ Add Customer</button>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search customers..." class="search-input">
+            <select id="sortSelect" class="sort-select">
+                <option value="name_asc">Name (A-Z)</option>
+                <option value="name_desc">Name (Z-A)</option>
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+            </select>
+        </div>
+
+        <!-- Customers Grid -->
+        <div class="customers-grid" id="customersGrid">
+            <div class="loading">Loading customers...</div>
+        </div>
+    </main>
+
+    <!-- Customer Modal -->
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add Customer</h3>
+                <span class="close" onclick="closeCustomerModal()">&times;</span>
+            </div>
+            <form id="customerForm">
+                <input type="hidden" id="customerId">
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" id="custName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="custEmail">
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="custPhone">
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea id="custAddress" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Tax ID / VAT</label>
+                    <input type="text" id="custTaxId">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="custNotes" rows="2"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn btn-primary">Save Customer</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .sort-select {
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .customers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .customer-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .customer-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .customer-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+        }
+        
+        .customer-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .customer-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85%;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #64748b;
+        }
+        
+        .close:hover {
+            color: #1e293b;
+        }
+        
+        form {
+            padding: 1.5rem;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-icon {
+            padding: 0.4rem 0.8rem;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn-icon:hover {
+            background: #e2e8f0;
+        }
+    </style>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let customers = [];
+        
+        async function loadCustomers() {
+            try {
+                customers = await CustomerAPI.getAll();
+                renderCustomers();
+            } catch (error) {
+                console.error('Error loading customers:', error);
+                document.getElementById('customersGrid').innerHTML = '<div class="loading">Error loading customers</div>';
+            }
+        }
+        
+        function renderCustomers() {
+            const grid = document.getElementById('customersGrid');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const sortBy = document.getElementById('sortSelect').value;
+            
+            let filtered = customers.filter(c => 
+                c.name.toLowerCase().includes(searchTerm) ||
+                (c.email && c.email.toLowerCase().includes(searchTerm))
+            );
+            
+            // Sort customers
+            filtered.sort((a, b) => {
+                switch(sortBy) {
+                    case 'name_asc': return a.name.localeCompare(b.name);
+                    case 'name_desc': return b.name.localeCompare(a.name);
+                    case 'newest': return new Date(b.created_at) - new Date(a.created_at);
+                    case 'oldest': return new Date(a.created_at) - new Date(b.created_at);
+                    default: return 0;
+                }
+            });
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="loading">No customers found</div>';
+                return;
+            }
+            
+            grid.innerHTML = filtered.map(customer => `
+                <div class="customer-card">
+                    <div class="customer-name">${escapeHtml(customer.name)}</div>
+                    ${customer.email ? `<div class="customer-detail">📧 ${escapeHtml(customer.email)}</div>` : ''}
+                    ${customer.phone ? `<div class="customer-detail">📞 ${escapeHtml(customer.phone)}</div>` : ''}
+                    ${customer.address ? `<div class="customer-detail">📍 ${escapeHtml(customer.address.substring(0, 60))}</div>` : ''}
+                    <div class="customer-actions">
+                        <button class="btn-small btn-secondary" onclick="editCustomer(${customer.id})">✏️ Edit</button>
+                        <button class="btn-small btn-secondary" onclick="deleteCustomer(${customer.id})">🗑️ Delete</button>
+                        <button class="btn-small btn-primary" onclick="createInvoiceForCustomer(${customer.id})">📄 Create Invoice</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        function openCustomerModal(customer = null) {
+            const modal = document.getElementById('customerModal');
+            const title = document.getElementById('modalTitle');
+            
+            if (customer) {
+                title.textContent = 'Edit Customer';
+                document.getElementById('customerId').value = customer.id;
+                document.getElementById('custName').value = customer.name;
+                document.getElementById('custEmail').value = customer.email || '';
+                document.getElementById('custPhone').value = customer.phone || '';
+                document.getElementById('custAddress').value = customer.address || '';
+                document.getElementById('custTaxId').value = customer.tax_id || '';
+                document.getElementById('custNotes').value = customer.notes || '';
+            } else {
+                title.textContent = 'Add Customer';
+                document.getElementById('customerForm').reset();
+                document.getElementById('customerId').value = '';
+            }
+            
+            modal.style.display = 'block';
+        }
+        
+        function closeCustomerModal() {
+            document.getElementById('customerModal').style.display = 'none';
+        }
+        
+        async function saveCustomer() {
+            const id = document.getElementById('customerId').value;
+            const data = {
+                company_id: 1,
+                name: document.getElementById('custName').value,
+                email: document.getElementById('custEmail').value,
+                phone: document.getElementById('custPhone').value,
+                address: document.getElementById('custAddress').value,
+                tax_id: document.getElementById('custTaxId').value,
+                notes: document.getElementById('custNotes').value
+            };
+            
+            try {
+                if (id) {
+                    await CustomerAPI.update(id, data);
+                } else {
+                    await CustomerAPI.create(data);
+                }
+                closeCustomerModal();
+                await loadCustomers();
+                alert('Customer saved successfully!');
+            } catch (error) {
+                alert('Error saving customer: ' + error.message);
+            }
+        }
+        
+        function editCustomer(id) {
+            const customer = customers.find(c => c.id === id);
+            if (customer) {
+                openCustomerModal(customer);
+            }
+        }
+        
+        async function deleteCustomer(id) {
+            if (confirm('Are you sure you want to delete this customer?')) {
+                try {
+                    await CustomerAPI.delete(id);
+                    await loadCustomers();
+                    alert('Customer deleted successfully!');
+                } catch (error) {
+                    alert('Error deleting customer: ' + error.message);
+                }
+            }
+        }
+        
+        function createInvoiceForCustomer(customerId) {
+            window.location.href = `invoice-builder.html?customer=${customerId}`;
+        }
+        
+        document.getElementById('customerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveCustomer();
+        });
+        
+        document.getElementById('searchInput').addEventListener('input', renderCustomers);
+        document.getElementById('sortSelect').addEventListener('change', renderCustomers);
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('customerModal');
+            if (event.target === modal) {
+                closeCustomerModal();
+            }
+        }
+        
+        loadCustomers();
+    </script>
+</body>
+</html>
