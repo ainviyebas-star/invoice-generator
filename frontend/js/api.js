@@ -1,63 +1,92 @@
-// API Configuration
-// The API URL will be replaced during deployment
-const API_BASE = window.APP_CONFIG?.API_BASE || 'https://invoice-backend.atologbook.workers.dev/api';
+// frontend/js/api.js - COMPLETE WORKING VERSION
+// HARDCODE THE CORRECT URL WITH /api
+const API_BASE = 'https://invoice-backend.atologbook.workers.dev/api';
 
-console.log('🔧 API Base URL:', API_BASE);
-
-// For production on Netlify, this will be set via Environment Variable
-// For local development, it uses the fallback or you can set .env file
+console.log('🚀 API Module Loaded');
+console.log('📍 API Base URL:', API_BASE);
 
 async function apiRequest(endpoint, options = {}) {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-    });
-    
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'API request failed');
+    try {
+        const url = `${API_BASE}${endpoint}`;
+        console.log(`📡 ${options.method || 'GET'} Request to:`, url);
+        
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            },
+        });
+        
+        console.log(`📥 Response Status:`, response.status);
+        
+        // For 404, show helpful error
+        if (response.status === 404) {
+            throw new Error(`API endpoint not found. Make sure the URL includes /api. Tried: ${url}`);
+        }
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error Response:', errorText);
+            
+            let errorMessage;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.error || errorJson.message || `HTTP ${response.status}`;
+            } catch {
+                errorMessage = errorText || `HTTP ${response.status}`;
+            }
+            throw new Error(errorMessage);
+        }
+        
+        const data = await response.json();
+        console.log('✅ Response Data:', data);
+        return data;
+    } catch (error) {
+        console.error('💥 API Request Failed:', error);
+        throw error;
     }
-    
-    return response.json();
 }
 
-// Export APIs (rest of your code)
-
-// Invoice API
-const InvoiceAPI = {
-    getAll: () => apiRequest('/invoices'),
-    get: (id) => apiRequest(`/invoices/${id}`),
-    create: (data) => apiRequest('/invoices', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id, data) => apiRequest(`/invoices/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id) => apiRequest(`/invoices/${id}`, { method: 'DELETE' }),
-};
-
+// Customer API
 const CustomerAPI = {
-    getAll: () => apiRequest('/customers'),
-    get: (id) => apiRequest(`/customers/${id}`),
+    getAll: () => {
+        console.log('📋 Fetching all customers...');
+        return apiRequest('/customers');
+    },
+    
+    get: (id) => {
+        console.log(`👤 Fetching customer ${id}...`);
+        return apiRequest(`/customers/${id}`);
+    },
+    
     create: async (data) => {
+        console.log('➕ Creating customer with data:', data);
         const response = await apiRequest('/customers', { 
             method: 'POST', 
             body: JSON.stringify(data) 
         });
         return response;
     },
-    update: (id, data) => apiRequest(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id) => apiRequest(`/customers/${id}`, { method: 'DELETE' }),
-};
-
-
-// Template API
-const TemplateAPI = {
-    getAll: () => apiRequest('/templates'),
-    get: (id) => apiRequest(`/templates/${id}`),
-    getFields: (id) => apiRequest(`/templates/${id}/fields`),
+    
+    update: (id, data) => {
+        console.log(`✏️ Updating customer ${id}...`);
+        return apiRequest(`/customers/${id}`, { 
+            method: 'PUT', 
+            body: JSON.stringify(data) 
+        });
+    },
+    
+    delete: (id) => {
+        console.log(`🗑️ Deleting customer ${id}...`);
+        return apiRequest(`/customers/${id}`, { 
+            method: 'DELETE' 
+        });
+    },
 };
 
 // Make available globally
 window.CustomerAPI = CustomerAPI;
-window.InvoiceAPI = InvoiceAPI; // Add this if you have it
-window.TemplateAPI = TemplateAPI; // Add this if you have it
+
+console.log('✅ CustomerAPI ready');
+console.log('🔗 Full API URL example:', `${API_BASE}/customers`);
