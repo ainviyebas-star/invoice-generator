@@ -33,14 +33,20 @@ const InvoiceAPI = {
     delete: (id) => apiRequest(`/invoices/${id}`, { method: 'DELETE' }),
 };
 
-// Customer API
 const CustomerAPI = {
     getAll: () => apiRequest('/customers'),
     get: (id) => apiRequest(`/customers/${id}`),
-    create: (data) => apiRequest('/customers', { method: 'POST', body: JSON.stringify(data) }),
+    create: async (data) => {
+        const response = await apiRequest('/customers', { 
+            method: 'POST', 
+            body: JSON.stringify(data) 
+        });
+        return response;
+    },
     update: (id, data) => apiRequest(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id) => apiRequest(`/customers/${id}`, { method: 'DELETE' }),
 };
+
 
 // Template API
 const TemplateAPI = {
@@ -48,3 +54,8 @@ const TemplateAPI = {
     get: (id) => apiRequest(`/templates/${id}`),
     getFields: (id) => apiRequest(`/templates/${id}/fields`),
 };
+
+// Make available globally
+window.CustomerAPI = CustomerAPI;
+window.InvoiceAPI = InvoiceAPI; // Add this if you have it
+window.TemplateAPI = TemplateAPI; // Add this if you have it

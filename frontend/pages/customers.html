@@ -309,30 +309,42 @@
         }
         
         async function saveCustomer() {
-            const id = document.getElementById('customerId').value;
-            const data = {
-                company_id: 1,
-                name: document.getElementById('custName').value,
-                email: document.getElementById('custEmail').value,
-                phone: document.getElementById('custPhone').value,
-                address: document.getElementById('custAddress').value,
-                tax_id: document.getElementById('custTaxId').value,
-                notes: document.getElementById('custNotes').value
-            };
-            
-            try {
-                if (id) {
-                    await CustomerAPI.update(id, data);
-                } else {
-                    await CustomerAPI.create(data);
-                }
-                closeCustomerModal();
-                await loadCustomers();
-                alert('Customer saved successfully!');
-            } catch (error) {
-                alert('Error saving customer: ' + error.message);
-            }
+    const id = document.getElementById('customerId').value;
+    const data = {
+        company_id: 1,
+        name: document.getElementById('custName').value,
+        email: document.getElementById('custEmail').value,
+        phone: document.getElementById('custPhone').value,
+        address: document.getElementById('custAddress').value,
+        tax_id: document.getElementById('custTaxId').value,
+        notes: document.getElementById('custNotes').value
+    };
+    
+    // Validate required fields
+    if (!data.name) {
+        alert('Customer name is required!');
+        return;
+    }
+    
+    try {
+        let result;
+        if (id) {
+            result = await CustomerAPI.update(id, data);
+            alert('Customer updated successfully!');
+        } else {
+            result = await CustomerAPI.create(data);
+            alert('Customer created successfully!');
         }
+        
+        console.log('Save result:', result);
+        closeCustomerModal();
+        await loadCustomers(); // Refresh the list
+        
+    } catch (error) {
+        console.error('Error saving customer:', error);
+        alert('Error saving customer: ' + error.message);
+    }
+}
         
         function editCustomer(id) {
             const customer = customers.find(c => c.id === id);
