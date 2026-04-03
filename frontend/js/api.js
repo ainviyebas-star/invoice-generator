@@ -1,6 +1,6 @@
 // frontend/js/api.js
 // Load config first (will be available from window.APP_CONFIG)
-const API_BASE = window.APP_CONFIG?.API_BASE || 'https://invoice-backend.atologbook.workers.dev/api';
+const API_BASE = window.APP_CONFIG?.API_BASE
 
 console.log('🚀 API Module Loaded');
 console.log('📍 API Base URL:', API_BASE);
