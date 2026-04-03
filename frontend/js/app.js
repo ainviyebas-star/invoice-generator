@@ -1,6 +1,13 @@
 // Dashboard functionality
+// frontend/js/app.js
+// Dashboard functionality
 async function loadDashboard() {
     try {
+        if (typeof InvoiceAPI === 'undefined') {
+            console.error('InvoiceAPI not loaded');
+            return;
+        }
+        
         const invoices = await InvoiceAPI.getAll();
         
         // Update stats
@@ -25,8 +32,8 @@ async function loadDashboard() {
         invoiceList.innerHTML = invoices.slice(0, 10).map(invoice => `
             <div class="invoice-item">
                 <div class="invoice-info">
-                    <h4>${invoice.invoice_number}</h4>
-                    <p>${invoice.customer_name || 'Unknown Customer'} • Due: ${invoice.due_date}</p>
+                    <h4>${escapeHtml(invoice.invoice_number)}</h4>
+                    <p>${escapeHtml(invoice.customer_name || 'Unknown Customer')} • Due: ${invoice.due_date}</p>
                 </div>
                 <div>
                     <span class="invoice-status status-${invoice.status}">${invoice.status}</span>
@@ -38,6 +45,21 @@ async function loadDashboard() {
         console.error('Error loading dashboard:', error);
         document.getElementById('invoiceList').innerHTML = '<div class="loading">Error loading invoices. Please check your API connection.</div>';
     }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+// Load dashboard if on index page
+if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+    loadDashboard();
 }
 
 // Initialize dashboard if on index page

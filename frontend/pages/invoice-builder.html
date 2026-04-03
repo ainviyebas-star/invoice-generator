@@ -11,7 +11,7 @@
         <div class="nav-container">
             <h1 class="logo">📄 InvoicePro</h1>
             <div class="nav-links">
-                <a href="../index.html">Dashboard</a>
+                <a href="dashboard.html">Dashboard</a>
                 <a href="invoice-builder.html" class="active">Create Invoice</a>
                 <a href="customers.html">Customers</a>
                 <a href="templates.html">Templates</a>
@@ -24,7 +24,7 @@
             <h2>Create New Invoice</h2>
             <form id="invoiceForm">
                 <div class="form-group">
-                    <label>Customer</label>
+                    <label>Customer *</label>
                     <select id="customerSelect" required>
                         <option value="">Select Customer</option>
                     </select>
@@ -38,12 +38,12 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>Issue Date</label>
+                    <label>Issue Date *</label>
                     <input type="date" id="issueDate" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Due Date</label>
+                    <label>Due Date *</label>
                     <input type="date" id="dueDate" required>
                 </div>
                 
@@ -55,17 +55,17 @@
                 
                 <div class="form-group">
                     <label>Notes</label>
-                    <textarea id="notes" rows="3"></textarea>
+                    <textarea id="notes" rows="3" placeholder="Additional notes..."></textarea>
                 </div>
                 
                 <div class="form-group">
                     <label>Terms & Conditions</label>
-                    <textarea id="terms" rows="2"></textarea>
+                    <textarea id="terms" rows="2" placeholder="Payment terms..."></textarea>
                 </div>
                 
                 <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                     <button type="submit" class="btn btn-primary">Create Invoice</button>
-                    <button type="button" class="btn btn-secondary" onclick="window.location.href='../index.html'">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='dashboard.html'">Cancel</button>
                 </div>
             </form>
         </div>
@@ -96,44 +96,87 @@
         function renderItems() {
             const container = document.getElementById('itemsContainer');
             if (items.length === 0) {
-                container.innerHTML = '<p>No items added. Click "Add Item" to start.</p>';
+                container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 1rem;">No items added. Click "Add Item" to start.</p>';
                 return;
             }
             
             container.innerHTML = items.map((item, idx) => `
                 <div class="item-row">
-                    <input type="text" placeholder="Description" value="${item.description}" 
+                    <input type="text" placeholder="Description" value="${escapeHtml(item.description)}" 
                            onchange="updateItem(${idx}, 'description', this.value)">
                     <input type="number" placeholder="Qty" value="${item.quantity}" 
-                           onchange="updateItem(${idx}, 'quantity', this.value)">
+                           onchange="updateItem(${idx}, 'quantity', parseFloat(this.value))">
                     <input type="number" placeholder="Unit Price" value="${item.unit_price}" 
-                           onchange="updateItem(${idx}, 'unit_price', this.value)">
-                    <input type="number" placeholder="Total" value="${item.total.toFixed(2)}" readonly>
-                    <button type="button" class="btn btn-secondary" onclick="removeItem(${idx})">✕</button>
+                           onchange="updateItem(${idx}, 'unit_price', parseFloat(this.value))">
+                    <input type="number" placeholder="Total" value="${item.total.toFixed(2)}" readonly style="background:#f1f5f9;">
+                    <button type="button" class="btn btn-secondary" onclick="removeItem(${idx})" style="padding: 0.5rem;">✕</button>
                 </div>
             `).join('');
         }
         
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
         async function loadCustomers() {
             try {
+                if (typeof CustomerAPI === 'undefined') {
+                    console.error('CustomerAPI not loaded');
+                    return;
+                }
                 const customers = await CustomerAPI.getAll();
                 const select = document.getElementById('customerSelect');
-                select.innerHTML = '<option value="">Select Customer</option>' + 
-                    customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                if (select && customers) {
+                    select.innerHTML = '<option value="">Select Customer</option>' + 
+                        customers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+                }
+                
+                // Check if customer ID was passed in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const customerId = urlParams.get('customer');
+                if (customerId && select) {
+                    select.value = customerId;
+                }
             } catch (error) {
                 console.error('Error loading customers:', error);
+                alert('Error loading customers: ' + error.message);
             }
         }
         
         document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+            // Check if InvoiceAPI is available
+            if (typeof InvoiceAPI === 'undefined') {
+                alert('API not loaded. Please refresh the page.');
+                console.error('InvoiceAPI is not defined');
+                return;
+            }
+            
+            const customerId = document.getElementById('customerSelect').value;
+            if (!customerId) {
+                alert('Please select a customer');
+                return;
+            }
+            
+            const validItems = items.filter(item => item.description && item.description.trim() !== '' && item.quantity > 0);
+            if (validItems.length === 0) {
+                alert('Please add at least one valid item with description and quantity');
+                return;
+            }
+            
+            const subtotal = validItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
             const total = subtotal;
             
             const invoiceData = {
                 company_id: 1,
-                customer_id: parseInt(document.getElementById('customerSelect').value),
+                customer_id: parseInt(customerId),
                 template_id: parseInt(document.getElementById('templateSelect').value),
                 issue_date: document.getElementById('issueDate').value,
                 due_date: document.getElementById('dueDate').value,
@@ -142,30 +185,39 @@
                 tax_rate: 0,
                 tax_amount: 0,
                 total: total,
-                notes: document.getElementById('notes').value,
-                terms: document.getElementById('terms').value,
-                items: items
+                notes: document.getElementById('notes').value || '',
+                terms: document.getElementById('terms').value || '',
+                items: validItems.map(item => ({
+                    description: item.description,
+                    quantity: item.quantity,
+                    unit_price: item.unit_price,
+                    total: item.quantity * item.unit_price
+                }))
             };
             
             try {
-                await InvoiceAPI.create(invoiceData);
+                console.log('Creating invoice:', invoiceData);
+                const result = await InvoiceAPI.create(invoiceData);
+                console.log('Result:', result);
                 alert('Invoice created successfully!');
-                window.location.href = '../index.html';
+                window.location.href = 'dashboard.html';
             } catch (error) {
+                console.error('Error creating invoice:', error);
                 alert('Error creating invoice: ' + error.message);
             }
         });
         
-// Set default dates - FIXED VERSION
-const today = new Date();
-const todayStr = today.toISOString().split('T')[0];
-document.getElementById('issueDate').value = todayStr;
-
-const nextMonth = new Date(today);
-nextMonth.setDate(today.getDate() + 30);
-const nextMonthStr = nextMonth.toISOString().split('T')[0];
-document.getElementById('dueDate').value = nextMonthStr;
+        // Set default dates
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        document.getElementById('issueDate').value = todayStr;
         
+        const nextMonth = new Date(today);
+        nextMonth.setDate(today.getDate() + 30);
+        const nextMonthStr = nextMonth.toISOString().split('T')[0];
+        document.getElementById('dueDate').value = nextMonthStr;
+        
+        // Initialize
         loadCustomers();
         addItem(); // Add one empty item row
     </script>

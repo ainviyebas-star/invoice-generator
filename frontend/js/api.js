@@ -1,5 +1,4 @@
-// frontend/js/api.js - COMPLETE WORKING VERSION
-// HARDCODE THE CORRECT URL WITH /api
+// frontend/js/api.js - Complete with all APIs
 const API_BASE = 'https://invoice-backend.atologbook.workers.dev/api';
 
 console.log('🚀 API Module Loaded');
@@ -20,9 +19,8 @@ async function apiRequest(endpoint, options = {}) {
         
         console.log(`📥 Response Status:`, response.status);
         
-        // For 404, show helpful error
         if (response.status === 404) {
-            throw new Error(`API endpoint not found. Make sure the URL includes /api. Tried: ${url}`);
+            throw new Error(`API endpoint not found. Tried: ${url}`);
         }
         
         if (!response.ok) {
@@ -61,7 +59,7 @@ const CustomerAPI = {
     },
     
     create: async (data) => {
-        console.log('➕ Creating customer with data:', data);
+        console.log('➕ Creating customer:', data);
         const response = await apiRequest('/customers', { 
             method: 'POST', 
             body: JSON.stringify(data) 
@@ -85,8 +83,67 @@ const CustomerAPI = {
     },
 };
 
-// Make available globally
-window.CustomerAPI = CustomerAPI;
+// Invoice API
+const InvoiceAPI = {
+    getAll: () => {
+        console.log('📄 Fetching all invoices...');
+        return apiRequest('/invoices');
+    },
+    
+    get: (id) => {
+        console.log(`📄 Fetching invoice ${id}...`);
+        return apiRequest(`/invoices/${id}`);
+    },
+    
+    create: async (data) => {
+        console.log('➕ Creating invoice:', data);
+        const response = await apiRequest('/invoices', { 
+            method: 'POST', 
+            body: JSON.stringify(data) 
+        });
+        return response;
+    },
+    
+    update: (id, data) => {
+        console.log(`✏️ Updating invoice ${id}...`);
+        return apiRequest(`/invoices/${id}`, { 
+            method: 'PUT', 
+            body: JSON.stringify(data) 
+        });
+    },
+    
+    delete: (id) => {
+        console.log(`🗑️ Deleting invoice ${id}...`);
+        return apiRequest(`/invoices/${id}`, { 
+            method: 'DELETE' 
+        });
+    },
+};
 
-console.log('✅ CustomerAPI ready');
-console.log('🔗 Full API URL example:', `${API_BASE}/customers`);
+// Template API
+const TemplateAPI = {
+    getAll: () => {
+        console.log('📋 Fetching all templates...');
+        return apiRequest('/templates');
+    },
+    
+    get: (id) => {
+        console.log(`📋 Fetching template ${id}...`);
+        return apiRequest(`/templates/${id}`);
+    },
+    
+    getFields: (id) => {
+        console.log(`📋 Fetching fields for template ${id}...`);
+        return apiRequest(`/templates/${id}/fields`);
+    },
+};
+
+// Make all APIs available globally
+window.CustomerAPI = CustomerAPI;
+window.InvoiceAPI = InvoiceAPI;
+window.TemplateAPI = TemplateAPI;
+
+console.log('✅ All APIs ready');
+console.log('🔗 CustomerAPI:', typeof window.CustomerAPI);
+console.log('🔗 InvoiceAPI:', typeof window.InvoiceAPI);
+console.log('🔗 TemplateAPI:', typeof window.TemplateAPI);
