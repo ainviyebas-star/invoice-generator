@@ -156,12 +156,15 @@
             }
         });
         
-        // Set default dates
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('issueDate').value = today;
-        const nextMonth = new Date();
-        nextMonth.setDate(today.getDate() + 30);
-        document.getElementById('dueDate').value = nextMonth.toISOString().split('T')[0];
+// Set default dates - FIXED VERSION
+const today = new Date();
+const todayStr = today.toISOString().split('T')[0];
+document.getElementById('issueDate').value = todayStr;
+
+const nextMonth = new Date(today);
+nextMonth.setDate(today.getDate() + 30);
+const nextMonthStr = nextMonth.toISOString().split('T')[0];
+document.getElementById('dueDate').value = nextMonthStr;
         
         loadCustomers();
         addItem(); // Add one empty item row
