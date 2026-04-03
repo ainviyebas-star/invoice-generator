@@ -176,6 +176,13 @@
             color: #1e293b;
         }
         
+        .company-name-header {
+            font-size: 0.9rem;
+            color: #3b82f6;
+            margin-left: 1rem;
+            font-weight: normal;
+        }
+        
         @media (max-width: 768px) {
             .filters-bar {
                 flex-direction: column;
@@ -196,14 +203,14 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <h1 class="logo">📄 InvoicePro</h1>
+            <h1 class="logo">📄 InvoicePro <span id="companyNameHeader" class="company-name-header"></span></h1>
             <div class="nav-links">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="invoice-builder.html">Create Invoice</a>
-    <a href="invoices.html">Invoices</a>
-    <a href="customers.html">Customers</a>
-    <a href="templates.html">Templates</a>
-    <a href="settings.html">⚙️ Settings</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="invoice-builder.html">Create Invoice</a>
+                <a href="invoices.html" class="active">Invoices</a>
+                <a href="customers.html">Customers</a>
+                <a href="templates.html">Templates</a>
+                <a href="settings.html">⚙️ Settings</a>
             </div>
         </div>
     </nav>
@@ -294,10 +301,28 @@
         let currentPage = 1;
         const itemsPerPage = 10;
         
+        // Display company name in header
+        function displayCompanyName() {
+            const settings = localStorage.getItem('companySettings');
+            if (settings) {
+                try {
+                    const company = JSON.parse(settings);
+                    const nameElement = document.getElementById('companyNameHeader');
+                    if (nameElement && company.name) {
+                        nameElement.textContent = `- ${company.name}`;
+                    }
+                } catch(e) {
+                    console.error('Error parsing company settings:', e);
+                }
+            }
+        }
+        
         async function loadInvoices() {
             try {
                 if (typeof InvoiceAPI === 'undefined') {
                     console.error('InvoiceAPI not loaded');
+                    const tbody = document.getElementById('invoicesTableBody');
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">API not loaded. Please refresh the page.</td></tr>';
                     return;
                 }
                 
@@ -434,7 +459,7 @@
                 try {
                     await InvoiceAPI.delete(id);
                     alert('Invoice deleted successfully!');
-                    loadInvoices(); // Reload the list
+                    loadInvoices();
                 } catch (error) {
                     alert('Error deleting invoice: ' + error.message);
                 }
@@ -448,7 +473,7 @@
                     invoice.status = 'paid';
                     await InvoiceAPI.update(id, invoice);
                     alert('Invoice marked as paid!');
-                    loadInvoices(); // Reload the list
+                    loadInvoices();
                 } catch (error) {
                     alert('Error updating invoice: ' + error.message);
                 }
@@ -456,7 +481,6 @@
         }
         
         function downloadPDF(id) {
-            // This will open the view page where user can print to PDF
             window.open(`view-invoice.html?id=${id}`, '_blank');
         }
         
@@ -486,8 +510,11 @@
             applyFiltersAndRender();
         });
         
-        // Load invoices on page load
-        loadInvoices();
+        // Load invoices and display company name on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            displayCompanyName();
+            loadInvoices();
+        });
     </script>
 </body>
 </html>

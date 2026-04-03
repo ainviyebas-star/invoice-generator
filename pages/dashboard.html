@@ -276,7 +276,7 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <h1 class="logo">📄 InvoicePro</h1>
+            <h1 class="logo">📄 InvoicePro <span id="companyNameHeader" class="company-name-header"></span></h1>
             <div class="nav-links">
                 <a href="dashboard.html" class="active">Dashboard</a>
                 <a href="invoice-builder.html">Create Invoice</a>
@@ -356,15 +356,15 @@
         let statusChart = null;
 
         // Display company name from localStorage
-        function displayCompanyName() {
-            const settings = localStorage.getItem('companySettings');
-            if (settings) {
-                try {
-                    const company = JSON.parse(settings);
-                    const nameElement = document.getElementById('companyNameDisplay');
-                    if (nameElement) {
-                        nameElement.textContent = company.name || 'Your Business';
-                    }
+  function displayCompanyName() {
+    const settings = localStorage.getItem('companySettings');
+    if (settings) {
+        try {
+            const company = JSON.parse(settings);
+            const nameElement = document.getElementById('companyNameHeader');
+            if (nameElement && company.name) {
+                nameElement.textContent = `- ${company.name}`;
+            }
                 } catch(e) {
                     console.error('Error parsing company settings:', e);
                 }
