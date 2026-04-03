@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - InvoicePro</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">📄 InvoicePro</h1>
+            <div class="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="invoice-builder.html">Create Invoice</a>
+    <a href="invoices.html">Invoices</a>  <!-- Add this line -->
+    <a href="customers.html">Customers</a>
+    <a href="templates.html">Templates</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="dashboard-header">
+            <h2>Dashboard</h2>
+            <button class="btn btn-primary" onclick="window.location.href='invoice-builder.html'">+ New Invoice</button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <h3>Total Invoices</h3>
+                    <div class="stat-value" id="totalInvoices">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <h3>Total Revenue</h3>
+                    <div class="stat-value" id="totalRevenue">$0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    <h3>Paid</h3>
+                    <div class="stat-value" id="paidInvoices">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-info">
+                    <h3>Overdue</h3>
+                    <div class="stat-value" id="overdueInvoices">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <h3>Revenue Trend</h3>
+                <canvas id="revenueChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Invoice Status Distribution</h3>
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Invoices -->
+        <div class="recent-invoices">
+            <h3>Recent Invoices</h3>
+            <div class="invoice-list" id="invoiceList">
+                <div class="loading">Loading invoices...</div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let revenueChart = null;
+        let statusChart = null;
+
+        async function loadDashboard() {
+            try {
+                const invoices = await InvoiceAPI.getAll();
+                
+                // Update stats
+                document.getElementById('totalInvoices').textContent = invoices.length;
+                
+                const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+                document.getElementById('totalRevenue').textContent = `$${totalRevenue.toFixed(2)}`;
+                
+                const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
+                document.getElementById('paidInvoices').textContent = paidInvoices;
+                
+                const overdueInvoices = invoices.filter(inv => inv.status === 'overdue').length;
+                document.getElementById('overdueInvoices').textContent = overdueInvoices;
+                
+                // Display recent invoices
+                const invoiceList = document.getElementById('invoiceList');
+                if (invoices.length === 0) {
+                    invoiceList.innerHTML = '<div class="loading">No invoices yet. Create your first invoice!</div>';
+                    return;
+                }
+                
+                invoiceList.innerHTML = invoices.slice(0, 10).map(invoice => `
+                    <div class="invoice-item">
+                        <div class="invoice-info">
+                            <h4>${invoice.invoice_number}</h4>
+                            <p>${invoice.customer_name || 'Unknown Customer'} • Due: ${invoice.due_date}</p>
+                        </div>
+                        <div class="invoice-actions">
+                            <span class="invoice-status status-${invoice.status}">${invoice.status}</span>
+                            <p style="margin-top: 0.5rem; font-weight: 600;">$${(invoice.total || 0).toFixed(2)}</p>
+                            <button class="btn-icon" onclick="viewInvoice(${invoice.id})">👁️</button>
+                            <button class="btn-icon" onclick="editInvoice(${invoice.id})">✏️</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Load charts
+                loadCharts(invoices);
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                document.getElementById('invoiceList').innerHTML = '<div class="loading">Error loading invoices. Please check your API connection.</div>';
+            }
+        }
+        
+        function loadCharts(invoices) {
+            // Revenue trend (last 6 months)
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            const revenueData = months.map(() => 0);
+            
+            invoices.forEach(invoice => {
+                const date = new Date(invoice.issue_date);
+                const monthIndex = date.getMonth();
+                if (monthIndex < 6) {
+                    revenueData[monthIndex] += invoice.total || 0;
+                }
+            });
+            
+            if (revenueChart) revenueChart.destroy();
+            revenueChart = new Chart(document.getElementById('revenueChart'), {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: revenueData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+            
+            // Status distribution
+            const statusCounts = {
+                draft: invoices.filter(i => i.status === 'draft').length,
+                sent: invoices.filter(i => i.status === 'sent').length,
+                paid: invoices.filter(i => i.status === 'paid').length,
+                overdue: invoices.filter(i => i.status === 'overdue').length
+            };
+            
+            if (statusChart) statusChart.destroy();
+            statusChart = new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Draft', 'Sent', 'Paid', 'Overdue'],
+                    datasets: [{
+                        data: [statusCounts.draft, statusCounts.sent, statusCounts.paid, statusCounts.overdue],
+                        backgroundColor: ['#94a3b8', '#3b82f6', '#10b981', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+        
+        function viewInvoice(id) {
+            window.location.href = `view-invoice.html?id=${id}`;
+        }
+        
+        function editInvoice(id) {
+            window.location.href = `edit-invoice.html?id=${id}`;
+        }
+        
+        // Load dashboard on page load
+        loadDashboard();
+    </script>
+</body>
+</html>

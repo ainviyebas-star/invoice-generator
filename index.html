@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Manager - Professional Invoicing</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">📄 InvoicePro</h1>
+            <div class="nav-links">
+                <a href="index.html" class="active">Dashboard</a>
+                <a href="pages/invoice-builder.html">Create Invoice</a>
+                <a href="pages/customers.html">Customers</a>
+                <a href="pages/templates.html">Templates</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="dashboard-header">
+            <h2>Invoice Dashboard</h2>
+            <button class="btn btn-primary" onclick="window.location.href='pages/invoice-builder.html'">+ New Invoice</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Invoices</h3>
+                <div class="stat-value" id="totalInvoices">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Revenue</h3>
+                <div class="stat-value" id="totalRevenue">$0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Paid</h3>
+                <div class="stat-value" id="paidInvoices">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Overdue</h3>
+                <div class="stat-value" id="overdueInvoices">0</div>
+            </div>
+        </div>
+
+        <div class="recent-invoices">
+            <h3>Recent Invoices</h3>
+            <div class="invoice-list" id="invoiceList">
+                <div class="loading">Loading invoices...</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Load config first -->
+    <script src="js/config.js"></script>
+    <!-- Then load API -->
+    <script src="js/api.js"></script>
+    <!-- Then your app code -->
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Templates - InvoicePro</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .templates-header {
+            margin-bottom: 2rem;
+        }
+        
+        .template-categories {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1rem;
+        }
+        
+        .category-btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.2s;
+            border-radius: 8px;
+        }
+        
+        .category-btn:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        
+        .category-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .template-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .template-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        
+        .template-card.selected {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+        
+        .template-preview-container {
+            position: relative;
+            background: #f8fafc;
+            padding: 1.5rem;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .template-preview {
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .template-preview:hover {
+            transform: scale(1.02);
+        }
+        
+        .preview-header {
+            padding: 1rem;
+            color: white;
+        }
+        
+        .preview-header.minimal {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .preview-header.modern {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+        }
+        
+        .preview-header.corporate {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        
+        .preview-header.creative {
+            background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+        }
+        
+        .preview-header.custom {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+        }
+        
+        .preview-header h4 {
+            margin: 0;
+            font-size: 1rem;
+        }
+        
+        .preview-header p {
+            margin: 0.25rem 0 0;
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+        
+        .preview-body {
+            padding: 1rem;
+        }
+        
+        .preview-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.75rem;
+        }
+        
+        .preview-field-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .preview-field-value {
+            color: #1e293b;
+        }
+        
+        .preview-items {
+            margin: 1rem 0;
+        }
+        
+        .preview-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.7rem;
+        }
+        
+        .preview-total {
+            text-align: right;
+            margin-top: 1rem;
+            padding-top: 0.5rem;
+            border-top: 2px solid #e2e8f0;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+        
+        .template-info {
+            padding: 1.5rem;
+        }
+        
+        .template-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .template-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        .template-badge.default {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .template-badge.custom {
+            background: #8b5cf6;
+            color: white;
+        }
+        
+        .template-description {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .template-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        
+        .template-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+        }
+        
+        .btn-outline:hover {
+            background: #f8fafc;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .modal-content.large {
+            max-width: 1000px;
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 2rem;
+        }
+        
+        .close-modal {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #475569;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+        
+        .color-preview {
+            width: 50px;
+            height: 40px;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+        }
+        
+        .fields-list {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        
+        .field-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+        
+        .field-item:last-child {
+            border-bottom: none;
+        }
+        
+        .field-info {
+            flex: 1;
+        }
+        
+        .field-label {
+            font-weight: 500;
+        }
+        
+        .field-key {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        
+        .field-required {
+            color: #ef4444;
+            font-size: 0.75rem;
+        }
+        
+        .full-preview {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .full-preview-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .full-preview-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .full-preview-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .templates-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                margin: 1rem;
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">📄 InvoicePro</h1>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="invoice-builder.html">Create Invoice</a>
+                <a href="invoices.html">Invoices</a>
+                <a href="customers.html">Customers</a>
+                <a href="templates.html" class="active">Templates</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="templates-header">
+            <div class="dashboard-header">
+                <h2>Invoice Templates</h2>
+                <button class="btn btn-primary" onclick="openTemplateEditor()">+ Create Custom Template</button>
+            </div>
+            
+            <div class="template-categories">
+                <button class="category-btn active" data-category="all">All Templates</button>
+                <button class="category-btn" data-category="minimal">Minimal</button>
+                <button class="category-btn" data-category="modern">Modern</button>
+                <button class="category-btn" data-category="corporate">Corporate</button>
+                <button class="category-btn" data-category="creative">Creative</button>
+                <button class="category-btn" data-category="custom">Custom</button>
+            </div>
+        </div>
+
+        <div id="templatesGrid" class="templates-grid">
+            <!-- Templates will be loaded here -->
+        </div>
+    </main>
+
+    <!-- Template Editor Modal -->
+    <div id="editorModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="editorTitle">Create Custom Template</h3>
+                <span class="close-modal" onclick="closeEditor()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="templateForm">
+                    <div class="form-group">
+                        <label>Template Name *</label>
+                        <input type="text" id="templateName" required placeholder="e.g., My Custom Template">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="templateDescription" rows="2" placeholder="Describe when to use this template"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="templateCategory">
+                            <option value="minimal">Minimal</option>
+                            <option value="modern">Modern</option>
+                            <option value="corporate">Corporate</option>
+                            <option value="creative">Creative</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Primary Color</label>
+                        <input type="color" id="primaryColor" value="#3b82f6">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Secondary Color</label>
+                        <input type="color" id="secondaryColor" value="#1e293b">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Template Fields</label>
+                        <div id="fieldsList" class="fields-list">
+                            <!-- Dynamic fields will appear here -->
+                        </div>
+                        <button type="button" class="btn btn-outline" onclick="addField()" style="width: 100%;">+ Add Field</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Live Preview</label>
+                        <div id="livePreview" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; background: #f8fafc; min-height: 200px;">
+                            <!-- Live preview will be shown here -->
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                        <button type="button" class="btn btn-outline" onclick="closeEditor()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Template</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Template Preview</h3>
+                <span class="close-modal" onclick="closePreview()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Full preview will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let templates = [];
+        let customFields = [];
+        let editingTemplateId = null;
+        
+        // Load templates from API
+        async function loadTemplates() {
+            try {
+                if (typeof TemplateAPI !== 'undefined') {
+                    const apiTemplates = await TemplateAPI.getAll();
+                    templates = apiTemplates || [];
+                }
+                renderTemplates();
+            } catch (error) {
+                console.error('Error loading templates:', error);
+                templates = [];
+                renderTemplates();
+            }
+        }
+        
+        function renderTemplates() {
+            const grid = document.getElementById('templatesGrid');
+            const activeCategory = document.querySelector('.category-btn.active')?.dataset.category || 'all';
+            
+            let filteredTemplates = templates;
+            if (activeCategory !== 'all') {
+                filteredTemplates = templates.filter(t => t.category === activeCategory);
+            }
+            
+            if (filteredTemplates.length === 0) {
+                grid.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; grid-column: 1/-1;">
+                        <p>No templates found. Create your first custom template!</p>
+                        <button class="btn btn-primary" onclick="openTemplateEditor()">+ Create Custom Template</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = filteredTemplates.map(template => generateTemplateCard(template)).join('');
+        }
+        
+        function generateTemplateCard(template) {
+            const category = template.category || 'modern';
+            const primaryColor = template.primary_color || '#3b82f6';
+            const secondaryColor = template.secondary_color || '#1e293b';
+            const fields = template.fields || ['invoice_number', 'date', 'client_name', 'items'];
+            
+            return `
+                <div class="template-card ${template.is_default ? 'selected' : ''}" data-category="${category}">
+                    <div class="template-preview-container" onclick="showFullPreview(${JSON.stringify(template).replace(/"/g, '&quot;')})">
+                        <div class="template-preview">
+                            <div class="preview-header ${category}" style="background: linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%);">
+                                <h4>${escapeHtml(template.name)}</h4>
+                                <p>Invoice Preview</p>
+                            </div>
+                            <div class="preview-body">
+                                ${fields.slice(0, 4).map(field => `
+                                    <div class="preview-field">
+                                        <span class="preview-field-label">${formatFieldLabel(field.field_key || field)}:</span>
+                                        <span class="preview-field-value">${getSampleValue(field.field_key || field)}</span>
+                                    </div>
+                                `).join('')}
+                                <div class="preview-total">
+                                    Total: $0.00
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="template-info">
+                        <div class="template-name">
+                            ${escapeHtml(template.name)}
+                            ${template.is_default ? '<span class="template-badge default">Default</span>' : ''}
+                            ${category === 'custom' ? '<span class="template-badge custom">Custom</span>' : ''}
+                        </div>
+                        <div class="template-description">${escapeHtml(template.description) || 'Custom invoice template'}</div>
+                        <div class="template-meta">
+                            <span>🎨 ${category}</span>
+                            <span>📋 ${fields.length} fields</span>
+                            <span>🔄 ${template.usage_count || 0} uses</span>
+                        </div>
+                        <div class="template-actions">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); useTemplate(${template.id})">Use Template</button>
+                            <button class="btn btn-outline" onclick="event.stopPropagation(); showFullPreview(${JSON.stringify(template).replace(/"/g, '&quot;')})">Preview</button>
+                            <button class="btn btn-outline" onclick="event.stopPropagation(); editTemplate(${template.id})">Edit</button>
+                            ${!template.is_default ? `<button class="btn btn-outline" onclick="event.stopPropagation(); setAsDefault(${template.id})">Set Default</button>` : ''}
+                            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteTemplate(${template.id})">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function formatFieldLabel(field) {
+            const labels = {
+                invoice_number: 'Invoice #',
+                issue_date: 'Issue Date',
+                due_date: 'Due Date',
+                client_name: 'Client',
+                client_email: 'Email',
+                items: 'Items',
+                notes: 'Notes',
+                po_number: 'PO Number',
+                tax_rate: 'Tax',
+                terms: 'Terms',
+                project_name: 'Project',
+                creative_notes: 'Creative Notes'
+            };
+            return labels[field] || field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+        
+        function getSampleValue(field) {
+            const samples = {
+                invoice_number: 'INV-2024-001',
+                issue_date: 'Jan 15, 2024',
+                due_date: 'Feb 15, 2024',
+                client_name: 'Acme Corp',
+                client_email: 'client@example.com',
+                items: '2 items',
+                notes: 'Thank you!',
+                po_number: 'PO-12345',
+                project_name: 'Website Redesign'
+            };
+            return samples[field] || 'Sample Data';
+        }
+        
+        function openTemplateEditor(template = null) {
+            const modal = document.getElementById('editorModal');
+            const title = document.getElementById('editorTitle');
+            
+            if (template) {
+                title.textContent = 'Edit Template';
+                editingTemplateId = template.id;
+                document.getElementById('templateName').value = template.name;
+                document.getElementById('templateDescription').value = template.description || '';
+                document.getElementById('templateCategory').value = template.category || 'custom';
+                document.getElementById('primaryColor').value = template.primary_color || '#3b82f6';
+                document.getElementById('secondaryColor').value = template.secondary_color || '#1e293b';
+                customFields = template.fields || [];
+            } else {
+                title.textContent = 'Create Custom Template';
+                editingTemplateId = null;
+                document.getElementById('templateForm').reset();
+                document.getElementById('templateCategory').value = 'custom';
+                document.getElementById('primaryColor').value = '#8b5cf6';
+                document.getElementById('secondaryColor').value = '#6d28d9';
+                customFields = [
+                    { field_key: 'invoice_number', field_label: 'Invoice Number', is_required: true },
+                    { field_key: 'issue_date', field_label: 'Issue Date', is_required: true },
+                    { field_key: 'due_date', field_label: 'Due Date', is_required: true },
+                    { field_key: 'client_name', field_label: 'Client Name', is_required: true }
+                ];
+            }
+            
+            renderFieldsList();
+            updateLivePreview();
+            modal.style.display = 'block';
+        }
+        
+        function renderFieldsList() {
+            const container = document.getElementById('fieldsList');
+            container.innerHTML = customFields.map((field, idx) => `
+                <div class="field-item">
+                    <div class="field-info">
+                        <div class="field-label">${escapeHtml(field.field_label)}</div>
+                        <div class="field-key">Key: ${escapeHtml(field.field_key)}</div>
+                    </div>
+                    <div>
+                        ${field.is_required ? '<span class="field-required">Required</span>' : ''}
+                        <button type="button" class="btn btn-outline" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem;" onclick="editField(${idx})">Edit</button>
+                        <button type="button" class="btn btn-danger" style="margin-left: 0.25rem; padding: 0.25rem 0.5rem;" onclick="removeField(${idx})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            if (customFields.length === 0) {
+                container.innerHTML = '<div style="padding: 1rem; text-align: center; color: #64748b;">No fields added. Click "Add Field" to start.</div>';
+            }
+        }
+        
+        function addField() {
+            const newKey = `custom_field_${customFields.length + 1}`;
+            customFields.push({
+                field_key: newKey,
+                field_label: 'New Field',
+                field_type: 'text',
+                is_required: false
+            });
+            renderFieldsList();
+            updateLivePreview();
+        }
+        
+        function editField(index) {
+            const field = customFields[index];
+            const newLabel = prompt('Enter field label:', field.field_label);
+            if (newLabel) {
+                field.field_label = newLabel;
+                field.field_key = newLabel.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                renderFieldsList();
+                updateLivePreview();
+            }
+        }
+        
+        function removeField(index) {
+            if (confirm('Remove this field?')) {
+                customFields.splice(index, 1);
+                renderFieldsList();
+                updateLivePreview();
+            }
+        }
+        
+        function updateLivePreview() {
+            const preview = document.getElementById('livePreview');
+            const primaryColor = document.getElementById('primaryColor').value;
+            const secondaryColor = document.getElementById('secondaryColor').value;
+            const category = document.getElementById('templateCategory').value;
+            
+            preview.innerHTML = `
+                <div style="background: white; border-radius: 8px; overflow: hidden;">
+                    <div style="background: linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%); padding: 1rem; color: white;">
+                        <h4 style="margin: 0;">${escapeHtml(document.getElementById('templateName').value || 'Template Name')}</h4>
+                        <p style="margin: 0.25rem 0 0; font-size: 0.75rem;">Live Preview</p>
+                    </div>
+                    <div style="padding: 1rem;">
+                        ${customFields.map(field => `
+                            <div style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
+                                <strong>${escapeHtml(field.field_label)}:</strong> 
+                                <span style="color: #64748b;">[Sample Value]</span>
+                                ${field.is_required ? '<span style="color: #ef4444; font-size: 0.7rem;"> *</span>' : ''}
+                            </div>
+                        `).join('')}
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; text-align: right;">
+                            <strong>Total:</strong> $0.00
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function saveTemplate() {
+            const templateData = {
+                name: document.getElementById('templateName').value,
+                description: document.getElementById('templateDescription').value,
+                category: document.getElementById('templateCategory').value,
+                primary_color: document.getElementById('primaryColor').value,
+                secondary_color: document.getElementById('secondaryColor').value,
+                fields: customFields,
+                company_id: 1
+            };
+            
+            if (!templateData.name) {
+                alert('Please enter a template name');
+                return;
+            }
+            
+            try {
+                if (editingTemplateId) {
+                    await TemplateAPI.update(editingTemplateId, templateData);
+                    alert('Template updated successfully!');
+                } else {
+                    await TemplateAPI.create(templateData);
+                    alert('Template created successfully!');
+                }
+                closeEditor();
+                await loadTemplates();
+            } catch (error) {
+                alert('Error saving template: ' + error.message);
+            }
+        }
+        
+        function showFullPreview(template) {
+            const modal = document.getElementById('previewModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            const primaryColor = template.primary_color || '#3b82f6';
+            const secondaryColor = template.secondary_color || '#1e293b';
+            const fields = template.fields || [];
+            
+            modalTitle.textContent = `${template.name} - Preview`;
+            
+            modalBody.innerHTML = `
+                <div class="full-preview">
+                    <div class="full-preview-header" style="background: linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%); padding: 2rem; color: white; border-radius: 12px; margin-bottom: 2rem;">
+                        <div class="full-preview-title">INVOICE</div>
+                        <div style="font-size: 0.875rem;">${escapeHtml(template.name)} Template</div>
+                    </div>
+                    
+                    <div class="full-preview-details">
+                        <div>
+                            <h4>From:</h4>
+                            <p><strong>Your Company Name</strong></p>
+                            <p>123 Business Street</p>
+                            <p>hello@yourcompany.com</p>
+                        </div>
+                        <div>
+                            <h4>Bill To:</h4>
+                            <p><strong>Client Name</strong></p>
+                            <p>client@example.com</p>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 2rem 0;">
+                        ${fields.map(field => `
+                            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+                                <strong>${escapeHtml(field.field_label)}:</strong>
+                                <span>${getSampleValue(field.field_key)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div style="margin-top: 2rem; padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                        <p><strong>Notes:</strong> Thank you for your business!</p>
+                    </div>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+        
+        function closeEditor() {
+            document.getElementById('editorModal').style.display = 'none';
+            editingTemplateId = null;
+        }
+        
+        function closePreview() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+        
+        function editTemplate(templateId) {
+            const template = templates.find(t => t.id === templateId);
+            if (template) {
+                openTemplateEditor(template);
+            }
+        }
+        
+        async function deleteTemplate(templateId) {
+            if (confirm('Are you sure you want to delete this template?')) {
+                try {
+                    await TemplateAPI.delete(templateId);
+                    alert('Template deleted successfully!');
+                    await loadTemplates();
+                } catch (error) {
+                    alert('Error deleting template: ' + error.message);
+                }
+            }
+        }
+        
+        function useTemplate(templateId) {
+            localStorage.setItem('selectedTemplate', templateId);
+            window.location.href = 'invoice-builder.html';
+        }
+        
+        async function setAsDefault(templateId) {
+            try {
+                await TemplateAPI.update(templateId, { is_default: true });
+                alert('Default template updated!');
+                await loadTemplates();
+            } catch (error) {
+                alert('Error setting default template: ' + error.message);
+            }
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // Event listeners
+        document.getElementById('templateForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveTemplate();
+        });
+        
+        document.getElementById('templateName').addEventListener('input', updateLivePreview);
+        document.getElementById('templateCategory').addEventListener('change', updateLivePreview);
+        document.getElementById('primaryColor').addEventListener('input', updateLivePreview);
+        document.getElementById('secondaryColor').addEventListener('input', updateLivePreview);
+        
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderTemplates();
+            });
+        });
+        
+        window.onclick = function(event) {
+            const editorModal = document.getElementById('editorModal');
+            const previewModal = document.getElementById('previewModal');
+            if (event.target === editorModal) closeEditor();
+            if (event.target === previewModal) closePreview();
+        }
+        
+        // Initialize
+        loadTemplates();
+    </script>
+</body>
+</html>
