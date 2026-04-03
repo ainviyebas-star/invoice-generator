@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Settings - InvoicePro</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .settings-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .settings-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .settings-header h3 {
+            font-size: 1.25rem;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #475569;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .logo-preview {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .logo-placeholder {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .company-preview {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        .company-preview h4 {
+            margin-bottom: 0.5rem;
+            color: #64748b;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .settings-card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">📄 InvoicePro</h1>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="invoice-builder.html">Create Invoice</a>
+                <a href="invoices.html">Invoices</a>
+                <a href="customers.html">Customers</a>
+                <a href="templates.html">Templates</a>
+                <a href="settings.html" class="active">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container settings-container">
+        <div class="dashboard-header">
+            <h2>Company Settings</h2>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <!-- Company Information -->
+        <div class="settings-card">
+            <div class="settings-header">
+                <h3>🏢 Company Information</h3>
+            </div>
+            <form id="companyForm">
+                <div class="form-group">
+                    <label>Company Name *</label>
+                    <input type="text" id="companyName" required placeholder="Your Business Name">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="companyEmail" placeholder="hello@yourcompany.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="companyPhone" placeholder="+1 (555) 000-0000">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea id="companyAddress" rows="3" placeholder="123 Business Street, Suite 100, City, State 12345"></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tax ID / VAT Number</label>
+                        <input type="text" id="companyTaxId" placeholder="TAX-ID-12345">
+                    </div>
+                    <div class="form-group">
+                        <label>Currency</label>
+                        <select id="companyCurrency">
+                            <option value="USD">USD - US Dollar ($)</option>
+                            <option value="EUR">EUR - Euro (€)</option>
+                            <option value="GBP">GBP - British Pound (£)</option>
+                            <option value="CAD">CAD - Canadian Dollar (C$)</option>
+                            <option value="AUD">AUD - Australian Dollar (A$)</option>
+                            <option value="JPY">JPY - Japanese Yen (¥)</option>
+                            <option value="CNY">CNY - Chinese Yuan (¥)</option>
+                            <option value="INR">INR - Indian Rupee (₹)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Website</label>
+                    <input type="url" id="companyWebsite" placeholder="https://yourcompany.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Logo URL (optional)</label>
+                    <input type="url" id="companyLogo" placeholder="https://yourcompany.com/logo.png">
+                    <div class="logo-preview">
+                        <div class="logo-placeholder" id="logoPreview">📄</div>
+                        <small>Enter a URL to display your company logo</small>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Bank Information -->
+        <div class="settings-card">
+            <div class="settings-header">
+                <h3>🏦 Bank Account Information</h3>
+            </div>
+            <form id="bankForm">
+                <div class="form-group">
+                    <label>Bank Name</label>
+                    <input type="text" id="bankName" placeholder="Bank of America">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Account Number</label>
+                        <input type="text" id="bankAccount" placeholder="****1234">
+                    </div>
+                    <div class="form-group">
+                        <label>Routing Number</label>
+                        <input type="text" id="bankRouting" placeholder="021000021">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary">Save Bank Info</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Invoice Defaults -->
+        <div class="settings-card">
+            <div class="settings-header">
+                <h3>📄 Invoice Defaults</h3>
+            </div>
+            <form id="invoiceDefaultsForm">
+                <div class="form-group">
+                    <label>Default Payment Terms</label>
+                    <select id="defaultTerms">
+                        <option value="Due on receipt">Due on receipt</option>
+                        <option value="Net 15">Net 15 (15 days)</option>
+                        <option value="Net 30">Net 30 (30 days)</option>
+                        <option value="Net 45">Net 45 (45 days)</option>
+                        <option value="Net 60">Net 60 (60 days)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Default Notes</label>
+                    <textarea id="defaultNotes" rows="3" placeholder="Thank you for your business!"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Default Footer Text</label>
+                    <input type="text" id="defaultFooter" placeholder="Payment is appreciated before due date">
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary">Save Defaults</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="settings-card">
+            <div class="settings-header">
+                <h3>👁️ Preview</h3>
+            </div>
+            <div class="company-preview" id="companyPreview">
+                <h4>Your Company Information</h4>
+                <div id="previewContent">Loading...</div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let companyData = {};
+        
+        async function loadCompanySettings() {
+            try {
+                // Try to get existing company data
+                const companies = await CompanyAPI?.getAll() || [];
+                if (companies && companies.length > 0) {
+                    companyData = companies[0];
+                    populateForm(companyData);
+                } else {
+                    // Use default values
+                    setDefaultValues();
+                }
+                updatePreview();
+            } catch (error) {
+                console.error('Error loading company settings:', error);
+                setDefaultValues();
+                updatePreview();
+            }
+        }
+        
+        function setDefaultValues() {
+            companyData = {
+                id: 1,
+                name: 'Your Business Name',
+                email: 'hello@yourbusiness.com',
+                phone: '+1 (555) 000-0000',
+                address: '123 Business Street, Suite 100, City, State 12345',
+                tax_id: 'TAX-ID-12345',
+                currency: 'USD',
+                website: '',
+                logo_url: '',
+                bank_name: '',
+                bank_account: '',
+                bank_routing: ''
+            };
+            populateForm(companyData);
+        }
+        
+        function populateForm(data) {
+            document.getElementById('companyName').value = data.name || '';
+            document.getElementById('companyEmail').value = data.email || '';
+            document.getElementById('companyPhone').value = data.phone || '';
+            document.getElementById('companyAddress').value = data.address || '';
+            document.getElementById('companyTaxId').value = data.tax_id || '';
+            document.getElementById('companyCurrency').value = data.currency || 'USD';
+            document.getElementById('companyWebsite').value = data.website || '';
+            document.getElementById('companyLogo').value = data.logo_url || '';
+            document.getElementById('bankName').value = data.bank_name || '';
+            document.getElementById('bankAccount').value = data.bank_account || '';
+            document.getElementById('bankRouting').value = data.bank_routing || '';
+            
+            // Load defaults from localStorage
+            document.getElementById('defaultTerms').value = localStorage.getItem('defaultTerms') || 'Net 30';
+            document.getElementById('defaultNotes').value = localStorage.getItem('defaultNotes') || 'Thank you for your business!';
+            document.getElementById('defaultFooter').value = localStorage.getItem('defaultFooter') || 'Payment is appreciated before due date';
+        }
+        
+        async function saveCompanySettings(event) {
+            event.preventDefault();
+            
+            const updatedData = {
+                id: companyData.id || 1,
+                name: document.getElementById('companyName').value,
+                email: document.getElementById('companyEmail').value,
+                phone: document.getElementById('companyPhone').value,
+                address: document.getElementById('companyAddress').value,
+                tax_id: document.getElementById('companyTaxId').value,
+                currency: document.getElementById('companyCurrency').value,
+                website: document.getElementById('companyWebsite').value,
+                logo_url: document.getElementById('companyLogo').value,
+                bank_name: document.getElementById('bankName').value,
+                bank_account: document.getElementById('bankAccount').value,
+                bank_routing: document.getElementById('bankRouting').value
+            };
+            
+            try {
+                if (companyData.id) {
+                    await CompanyAPI?.update(companyData.id, updatedData);
+                } else {
+                    await CompanyAPI?.create(updatedData);
+                }
+                companyData = updatedData;
+                showAlert('Company settings saved successfully!', 'success');
+                updatePreview();
+                
+                // Update company name in localStorage for other pages
+                localStorage.setItem('companyName', updatedData.name);
+            } catch (error) {
+                // If API fails, save to localStorage as fallback
+                localStorage.setItem('companySettings', JSON.stringify(updatedData));
+                showAlert('Settings saved locally! (API not available)', 'success');
+                updatePreview();
+            }
+        }
+        
+        function saveDefaults() {
+            localStorage.setItem('defaultTerms', document.getElementById('defaultTerms').value);
+            localStorage.setItem('defaultNotes', document.getElementById('defaultNotes').value);
+            localStorage.setItem('defaultFooter', document.getElementById('defaultFooter').value);
+            showAlert('Invoice defaults saved successfully!', 'success');
+        }
+        
+        function resetForm() {
+            if (confirm('Reset all changes? This will revert to saved settings.')) {
+                loadCompanySettings();
+                showAlert('Form reset to saved settings', 'success');
+            }
+        }
+        
+        function updatePreview() {
+            const name = document.getElementById('companyName').value || 'Your Business Name';
+            const email = document.getElementById('companyEmail').value || 'hello@yourbusiness.com';
+            const phone = document.getElementById('companyPhone').value || '+1 (555) 000-0000';
+            const address = document.getElementById('companyAddress').value || '123 Business Street';
+            const logo = document.getElementById('companyLogo').value;
+            
+            const previewHtml = `
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    ${logo ? `<img src="${logo}" style="width: 50px; height: 50px; object-fit: contain;">` : '<div style="font-size: 2rem;">📄</div>'}
+                    <div>
+                        <strong style="font-size: 1.1rem;">${escapeHtml(name)}</strong><br>
+                        <small>${escapeHtml(email)} | ${escapeHtml(phone)}</small>
+                    </div>
+                </div>
+                <p style="font-size: 0.875rem; color: #64748b;">${escapeHtml(address)}</p>
+                <hr style="margin: 0.5rem 0;">
+                <p style="font-size: 0.75rem; color: #64748b;">Currency: ${document.getElementById('companyCurrency').value}</p>
+            `;
+            
+            document.getElementById('previewContent').innerHTML = previewHtml;
+            
+            // Update logo preview
+            if (logo) {
+                document.getElementById('logoPreview').innerHTML = `<img src="${logo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
+            } else {
+                document.getElementById('logoPreview').innerHTML = '📄';
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // Event listeners
+        document.getElementById('companyForm').addEventListener('submit', saveCompanySettings);
+        document.getElementById('bankForm').addEventListener('submit', saveCompanySettings);
+        document.getElementById('invoiceDefaultsForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveDefaults();
+        });
+        
+        // Live preview on input changes
+        const inputs = ['companyName', 'companyEmail', 'companyPhone', 'companyAddress', 'companyLogo', 'companyCurrency'];
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', updatePreview);
+        });
+        
+        // Load settings on page load
+        loadCompanySettings();
+        
+        // Update global company name for other pages
+        window.updateCompanyName = function(name) {
+            localStorage.setItem('companyName', name);
+        };
+    </script>
+</body>
+</html>
