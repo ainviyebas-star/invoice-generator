@@ -331,6 +331,7 @@
     </main>
 
     <script src="../js/api.js"></script>
+    <script src="../js/header.js"></script>
     <script>
         let companyData = {};
         
@@ -390,43 +391,61 @@
             document.getElementById('defaultFooter').value = localStorage.getItem('defaultFooter') || 'Payment is appreciated before due date';
         }
         
-        async function saveCompanySettings(event) {
-            event.preventDefault();
-            
-            const updatedData = {
-                id: companyData.id || 1,
-                name: document.getElementById('companyName').value,
-                email: document.getElementById('companyEmail').value,
-                phone: document.getElementById('companyPhone').value,
-                address: document.getElementById('companyAddress').value,
-                tax_id: document.getElementById('companyTaxId').value,
-                currency: document.getElementById('companyCurrency').value,
-                website: document.getElementById('companyWebsite').value,
-                logo_url: document.getElementById('companyLogo').value,
-                bank_name: document.getElementById('bankName').value,
-                bank_account: document.getElementById('bankAccount').value,
-                bank_routing: document.getElementById('bankRouting').value
-            };
-            
-            try {
-                if (companyData.id) {
-                    await CompanyAPI?.update(companyData.id, updatedData);
-                } else {
-                    await CompanyAPI?.create(updatedData);
-                }
-                companyData = updatedData;
-                showAlert('Company settings saved successfully!', 'success');
-                updatePreview();
-                
-                // Update company name in localStorage for other pages
-                localStorage.setItem('companyName', updatedData.name);
-            } catch (error) {
-                // If API fails, save to localStorage as fallback
-                localStorage.setItem('companySettings', JSON.stringify(updatedData));
-                showAlert('Settings saved locally! (API not available)', 'success');
-                updatePreview();
-            }
+async function saveCompanySettings(event) {
+    event.preventDefault();
+    
+    const updatedData = {
+        id: companyData.id || 1,
+        name: document.getElementById('companyName').value,
+        email: document.getElementById('companyEmail').value,
+        phone: document.getElementById('companyPhone').value,
+        address: document.getElementById('companyAddress').value,
+        tax_id: document.getElementById('companyTaxId').value,
+        currency: document.getElementById('companyCurrency').value,
+        website: document.getElementById('companyWebsite').value,
+        logo_url: document.getElementById('companyLogo').value,
+        bank_name: document.getElementById('bankName').value,
+        bank_account: document.getElementById('bankAccount').value,
+        bank_routing: document.getElementById('bankRouting').value
+    };
+    
+    try {
+        if (companyData.id) {
+            await CompanyAPI.update(companyData.id, updatedData);
+        } else {
+            await CompanyAPI.create(updatedData);
         }
+        companyData = updatedData;
+        
+        // Also save to localStorage for quick access
+        localStorage.setItem('companySettings', JSON.stringify(updatedData));
+        
+        showAlert('Company settings saved successfully!', 'success');
+        updatePreview();
+        
+        // Update company name in header on all pages
+        updateAllPageHeaders(updatedData.name);
+        
+    } catch (error) {
+        console.error('Error saving to API:', error);
+        // Fallback to localStorage only
+        localStorage.setItem('companySettings', JSON.stringify(updatedData));
+        showAlert('Settings saved locally! (API not available)', 'success');
+        updatePreview();
+        updateAllPageHeaders(updatedData.name);
+    }
+}
+
+function updateAllPageHeaders(companyName) {
+    // Update current page header
+    const headerElement = document.getElementById('companyNameHeader');
+    if (headerElement) {
+        headerElement.textContent = `- ${companyName}`;
+    }
+    
+    // Store for other pages
+    localStorage.setItem('companyName', companyName);
+}
         
         function saveDefaults() {
             localStorage.setItem('defaultTerms', document.getElementById('defaultTerms').value);

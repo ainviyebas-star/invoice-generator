@@ -296,26 +296,37 @@
     </main>
 
     <script src="../js/api.js"></script>
+    <script src="../js/header.js"></script>
     <script>
         let allInvoices = [];
         let currentPage = 1;
         const itemsPerPage = 10;
         
-        // Display company name in header
-        function displayCompanyName() {
+        // Add this function to invoices.html
+async function displayCompanyName() {
+    try {
+        // Try to get from API first
+        if (typeof getCompanyNameFromAPI !== 'undefined') {
+            const companyName = await getCompanyNameFromAPI();
+            const nameElement = document.getElementById('companyNameHeader');
+            if (nameElement && companyName) {
+                nameElement.textContent = `- ${companyName}`;
+            }
+        } else {
+            // Fallback to localStorage
             const settings = localStorage.getItem('companySettings');
             if (settings) {
-                try {
-                    const company = JSON.parse(settings);
-                    const nameElement = document.getElementById('companyNameHeader');
-                    if (nameElement && company.name) {
-                        nameElement.textContent = `- ${company.name}`;
-                    }
-                } catch(e) {
-                    console.error('Error parsing company settings:', e);
+                const company = JSON.parse(settings);
+                const nameElement = document.getElementById('companyNameHeader');
+                if (nameElement && company.name) {
+                    nameElement.textContent = `- ${company.name}`;
                 }
             }
         }
+    } catch(e) {
+        console.error('Error displaying company name:', e);
+    }
+}
         
         async function loadInvoices() {
             try {

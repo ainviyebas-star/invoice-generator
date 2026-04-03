@@ -221,6 +221,32 @@ function updateCompanyNameDisplay() {
     });
 }
 
+// Add this function to api.js
+async function getCompanyNameFromAPI() {
+    try {
+        if (typeof CompanyAPI !== 'undefined') {
+            const companies = await CompanyAPI.getAll();
+            if (companies && companies.length > 0 && companies[0].name) {
+                return companies[0].name;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching company from API:', error);
+    }
+    
+    // Fallback to localStorage
+    const settings = localStorage.getItem('companySettings');
+    if (settings) {
+        try {
+            const company = JSON.parse(settings);
+            return company.name || 'Your Business Name';
+        } catch(e) {}
+    }
+    return 'Your Business Name';
+}
+
+
+
 // Make all APIs available globally
 window.CustomerAPI = CustomerAPI;
 window.InvoiceAPI = InvoiceAPI;
@@ -228,6 +254,7 @@ window.TemplateAPI = TemplateAPI;
 window.CompanyAPI = CompanyAPI;
 window.getCompanyName = getCompanyName;
 window.updateCompanyNameDisplay = updateCompanyNameDisplay;
+window.getCompanyNameFromAPI = getCompanyNameFromAPI;
 
 console.log('✅ All APIs ready');
 console.log('🔗 CustomerAPI:', typeof window.CustomerAPI);

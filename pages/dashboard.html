@@ -351,25 +351,44 @@
     </main>
 
     <script src="../js/api.js"></script>
+    <script src="../js/header.js"></script>
     <script>
         let revenueChart = null;
         let statusChart = null;
 
         // Display company name from localStorage
-  function displayCompanyName() {
-    const settings = localStorage.getItem('companySettings');
-    if (settings) {
-        try {
-            const company = JSON.parse(settings);
+ 
+async function displayCompanyName() {
+    try {
+        if (typeof getCompanyNameFromAPI !== 'undefined') {
+            const companyName = await getCompanyNameFromAPI();
             const nameElement = document.getElementById('companyNameHeader');
-            if (nameElement && company.name) {
-                nameElement.textContent = `- ${company.name}`;
+            if (nameElement && companyName) {
+                nameElement.textContent = `- ${companyName}`;
             }
-                } catch(e) {
-                    console.error('Error parsing company settings:', e);
+            const welcomeElement = document.getElementById('companyNameDisplay');
+            if (welcomeElement && companyName) {
+                welcomeElement.textContent = companyName;
+            }
+        } else {
+            const settings = localStorage.getItem('companySettings');
+            if (settings) {
+                const company = JSON.parse(settings);
+                const nameElement = document.getElementById('companyNameHeader');
+                if (nameElement && company.name) {
+                    nameElement.textContent = `- ${company.name}`;
+                }
+                const welcomeElement = document.getElementById('companyNameDisplay');
+                if (welcomeElement && company.name) {
+                    welcomeElement.textContent = company.name;
                 }
             }
         }
+    } catch(e) {
+        console.error('Error:', e);
+    }
+}
+
 
         async function loadDashboard() {
             try {
