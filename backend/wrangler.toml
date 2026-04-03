@@ -2,13 +2,15 @@ name = "invoice-backend"
 main = "src/index.js"
 compatibility_date = "2024-02-08"
 
+# D1 Database binding
 [[d1_databases]]
 binding = "DB"
 database_name = "invoice-db"
-database_id = "2d509429-92b6-40c3-a464-2ea23f2dba54"  # Replace after creating D1 DB
+database_id = "2d509429-92b6-40c3-a464-2ea23f2dba54"  # ← This is NOT a secret, commit it
 
-[env.production]
-vars = { ENVIRONMENT = "production" }
+# Environment variables (non-secret only)
+[vars]
+ENVIRONMENT = "production"
+API_VERSION = "v1"
 
-[env.staging]
-vars = { ENVIRONMENT = "staging" }
+# Note: Secrets (API tokens) go in Cloudflare Dashboard, not here!

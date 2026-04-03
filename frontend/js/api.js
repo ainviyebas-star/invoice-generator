@@ -1,4 +1,9 @@
-const API_BASE = 'https://invoice-backend.atologbook.workers.dev'; // Replace with your Cloudflare Worker URL
+// API Configuration
+// The API URL will be replaced during deployment
+const API_BASE = import.meta.env?.VITE_API_URL || 'https://invoice-backend.atologbook.workers.dev/api';
+
+// For production on Netlify, this will be set via Environment Variable
+// For local development, it uses the fallback or you can set .env file
 
 async function apiRequest(endpoint, options = {}) {
     const response = await fetch(`${API_BASE}${endpoint}`, {
@@ -16,6 +21,8 @@ async function apiRequest(endpoint, options = {}) {
     
     return response.json();
 }
+
+// Export APIs (rest of your code)
 
 // Invoice API
 const InvoiceAPI = {
