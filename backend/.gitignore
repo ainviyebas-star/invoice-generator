@@ -1,0 +1,7 @@
+node_modules/
+.env
+.cloudflare/
+wrangler-local-state.json
+.dev.vars
+*.log
+.DS_Store
