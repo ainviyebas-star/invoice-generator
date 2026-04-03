@@ -124,6 +124,7 @@ const InvoiceAPI = {
 };
 
 // Template API
+// Template API - Complete with all methods
 const TemplateAPI = {
     getAll: () => {
         console.log('📋 Fetching all templates...');
@@ -139,6 +140,37 @@ const TemplateAPI = {
         console.log(`📋 Fetching fields for template ${id}...`);
         return apiRequest(`/templates/${id}/fields`);
     },
+    
+    create: async (data) => {
+        console.log('➕ Creating template:', data);
+        const response = await apiRequest('/templates', { 
+            method: 'POST', 
+            body: JSON.stringify(data) 
+        });
+        return response;
+    },
+    
+    update: (id, data) => {
+        console.log(`✏️ Updating template ${id}...`, data);
+        return apiRequest(`/templates/${id}`, { 
+            method: 'PUT', 
+            body: JSON.stringify(data) 
+        });
+    },
+    
+    delete: (id) => {
+        console.log(`🗑️ Deleting template ${id}...`);
+        return apiRequest(`/templates/${id}`, { 
+            method: 'DELETE' 
+        });
+    },
+    
+    setDefault: (id) => {
+        console.log(`⭐ Setting template ${id} as default...`);
+        return apiRequest(`/templates/${id}/default`, { 
+            method: 'PUT' 
+        });
+    }
 };
 
 // Make all APIs available globally
