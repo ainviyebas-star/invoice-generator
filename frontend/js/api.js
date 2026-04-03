@@ -1,6 +1,8 @@
 // API Configuration
 // The API URL will be replaced during deployment
-const API_BASE = import.meta.env?.VITE_API_URL || 'https://invoice-backend.atologbook.workers.dev/api';
+const API_BASE = window.APP_CONFIG?.API_BASE || 'https://invoice-backend.atologbook.workers.dev/api';
+
+console.log('🔧 API Base URL:', API_BASE);
 
 // For production on Netlify, this will be set via Environment Variable
 // For local development, it uses the fallback or you can set .env file
