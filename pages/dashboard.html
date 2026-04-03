@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="../css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Keep all existing styles */
         * {
             margin: 0;
             padding: 0;
@@ -72,6 +73,17 @@
             margin-bottom: 2rem;
             flex-wrap: wrap;
             gap: 1rem;
+        }
+        
+        .welcome-text h2 {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+        
+        .welcome-text p {
+            color: #64748b;
+            font-size: 0.875rem;
         }
         
         .stats-grid {
@@ -271,13 +283,17 @@
                 <a href="invoices.html">Invoices</a>
                 <a href="customers.html">Customers</a>
                 <a href="templates.html">Templates</a>
+                <a href="settings.html">⚙️ Settings</a>
             </div>
         </div>
     </nav>
 
     <main class="container">
         <div class="dashboard-header">
-            <h2>Dashboard</h2>
+            <div class="welcome-text">
+                <h2>Welcome back, <span id="companyNameDisplay" class="company-name-display">Your Business</span>!</h2>
+                <p>Here's what's happening with your invoices today.</p>
+            </div>
             <button class="btn btn-primary" onclick="window.location.href='invoice-builder.html'">+ New Invoice</button>
         </div>
 
@@ -338,6 +354,22 @@
     <script>
         let revenueChart = null;
         let statusChart = null;
+
+        // Display company name from localStorage
+        function displayCompanyName() {
+            const settings = localStorage.getItem('companySettings');
+            if (settings) {
+                try {
+                    const company = JSON.parse(settings);
+                    const nameElement = document.getElementById('companyNameDisplay');
+                    if (nameElement) {
+                        nameElement.textContent = company.name || 'Your Business';
+                    }
+                } catch(e) {
+                    console.error('Error parsing company settings:', e);
+                }
+            }
+        }
 
         async function loadDashboard() {
             try {
@@ -473,7 +505,10 @@
         }
         
         // Load dashboard on page load
-        document.addEventListener('DOMContentLoaded', loadDashboard);
+        document.addEventListener('DOMContentLoaded', () => {
+            displayCompanyName();
+            loadDashboard();
+        });
     </script>
 </body>
 </html>

@@ -114,7 +114,7 @@ const InvoiceAPI = {
     },
 };
 
-// Template API - Complete with all CRUD methods
+// Template API
 const TemplateAPI = {
     getAll: () => {
         console.log('📋 Fetching all templates...');
@@ -162,13 +162,75 @@ const TemplateAPI = {
     }
 };
 
+// ============================================
+// COMPANY API - ADD THIS SECTION
+// ============================================
+const CompanyAPI = {
+    getAll: () => {
+        console.log('🏢 Fetching company info...');
+        return apiRequest('/companies');
+    },
+    
+    get: (id) => {
+        console.log(`🏢 Fetching company ${id}...`);
+        return apiRequest(`/companies/${id}`);
+    },
+    
+    create: (data) => {
+        console.log('🏢 Creating company:', data);
+        return apiRequest('/companies', { 
+            method: 'POST', 
+            body: JSON.stringify(data) 
+        });
+    },
+    
+    update: (id, data) => {
+        console.log(`✏️ Updating company ${id}...`, data);
+        return apiRequest(`/companies/${id}`, { 
+            method: 'PUT', 
+            body: JSON.stringify(data) 
+        });
+    },
+    
+    delete: (id) => {
+        console.log(`🗑️ Deleting company ${id}...`);
+        return apiRequest(`/companies/${id}`, { 
+            method: 'DELETE' 
+        });
+    },
+};
+
+// Helper function to get company name from localStorage (for quick access)
+function getCompanyName() {
+    const settings = localStorage.getItem('companySettings');
+    if (settings) {
+        try {
+            const company = JSON.parse(settings);
+            return company.name || 'Your Business Name';
+        } catch(e) {}
+    }
+    return 'Your Business Name';
+}
+
+// Helper function to update company name display everywhere
+function updateCompanyNameDisplay() {
+    const companyName = getCompanyName();
+    const elements = document.querySelectorAll('.company-name-display');
+    elements.forEach(el => {
+        el.textContent = companyName;
+    });
+}
+
 // Make all APIs available globally
 window.CustomerAPI = CustomerAPI;
 window.InvoiceAPI = InvoiceAPI;
 window.TemplateAPI = TemplateAPI;
+window.CompanyAPI = CompanyAPI;
+window.getCompanyName = getCompanyName;
+window.updateCompanyNameDisplay = updateCompanyNameDisplay;
 
 console.log('✅ All APIs ready');
 console.log('🔗 CustomerAPI:', typeof window.CustomerAPI);
 console.log('🔗 InvoiceAPI:', typeof window.InvoiceAPI);
 console.log('🔗 TemplateAPI:', typeof window.TemplateAPI);
-console.log('🔗 TemplateAPI.create:', typeof window.TemplateAPI?.create);
+console.log('🔗 CompanyAPI:', typeof window.CompanyAPI);
