@@ -114,7 +114,7 @@ const InvoiceAPI = {
     },
 };
 
-// Template API - Complete with all CRUD operations
+// Template API - Complete with all CRUD methods
 const TemplateAPI = {
     getAll: () => {
         console.log('📋 Fetching all templates...');
