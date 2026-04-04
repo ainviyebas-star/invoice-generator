@@ -1,0 +1,43 @@
+name: Update Environment Variables
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: 'API Base URL'
+        required: false
+        type: string
+      app_version:
+        description: 'App Version'
+        required: false
+        type: string
+
+jobs:
+  update-vars:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update API URL
+        if: ${{ inputs.api_url }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.actions.createEnvironmentVariable({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              environment_name: 'production',
+              name: 'API_BASE_URL',
+              value: '${{ inputs.api_url }}'
+            });
+      
+      - name: Update Version
+        if: ${{ inputs.app_version }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.actions.createEnvironmentVariable({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              environment_name: 'production',
+              name: 'VERSION',
+              value: '${{ inputs.app_version }}'
+            });

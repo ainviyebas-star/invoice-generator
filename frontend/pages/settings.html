@@ -116,15 +116,6 @@
             background: #cbd5e1;
         }
         
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background: #059669;
-        }
-        
         .alert {
             padding: 1rem;
             border-radius: 8px;
@@ -329,24 +320,69 @@
             </div>
         </div>
     </main>
-
+    
+    <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/header.js"></script>
     <script>
         let companyData = {};
         
+        // Function to update company name across all pages
+        function updateAllPageHeaders(companyName) {
+            // Update current page header
+            const headerElement = document.getElementById('companyNameHeader');
+            if (headerElement) {
+                headerElement.textContent = companyName;
+            }
+            
+            // Update welcome message if on dashboard
+            const welcomeElement = document.getElementById('companyNameDisplay');
+            if (welcomeElement) {
+                welcomeElement.textContent = companyName;
+            }
+            
+            // Store for other pages
+            localStorage.setItem('companyName', companyName);
+            
+            // If header.js is loaded and has the function, use it
+            if (typeof window.updateCompanyHeader === 'function') {
+                window.updateCompanyHeader();
+            }
+            
+            console.log('Company name updated across all pages:', companyName);
+        }
+        
         async function loadCompanySettings() {
             try {
-                // Try to get existing company data
-                const companies = await CompanyAPI?.getAll() || [];
-                if (companies && companies.length > 0) {
-                    companyData = companies[0];
-                    populateForm(companyData);
-                } else {
-                    // Use default values
-                    setDefaultValues();
+                // First check localStorage for saved settings
+                const savedSettings = localStorage.getItem('companySettings');
+                if (savedSettings) {
+                    const parsed = JSON.parse(savedSettings);
+                    if (parsed && parsed.name) {
+                        companyData = parsed;
+                        populateForm(companyData);
+                        updatePreview();
+                        updateAllPageHeaders(companyData.name);
+                        return;
+                    }
                 }
+                
+                // Try to get existing company data from API
+                if (typeof CompanyAPI !== 'undefined' && CompanyAPI.getAll) {
+                    const companies = await CompanyAPI.getAll();
+                    if (companies && companies.length > 0) {
+                        companyData = companies[0];
+                        populateForm(companyData);
+                        updatePreview();
+                        updateAllPageHeaders(companyData.name);
+                        return;
+                    }
+                }
+                
+                // Use default values if nothing found
+                setDefaultValues();
                 updatePreview();
+                
             } catch (error) {
                 console.error('Error loading company settings:', error);
                 setDefaultValues();
@@ -386,66 +422,61 @@
             document.getElementById('bankRouting').value = data.bank_routing || '';
             
             // Load defaults from localStorage
-            document.getElementById('defaultTerms').value = localStorage.getItem('defaultTerms') || 'Net 30';
-            document.getElementById('defaultNotes').value = localStorage.getItem('defaultNotes') || 'Thank you for your business!';
-            document.getElementById('defaultFooter').value = localStorage.getItem('defaultFooter') || 'Payment is appreciated before due date';
+            const defaultTerms = localStorage.getItem('defaultTerms');
+            const defaultNotes = localStorage.getItem('defaultNotes');
+            const defaultFooter = localStorage.getItem('defaultFooter');
+            
+            if (defaultTerms) document.getElementById('defaultTerms').value = defaultTerms;
+            if (defaultNotes) document.getElementById('defaultNotes').value = defaultNotes;
+            if (defaultFooter) document.getElementById('defaultFooter').value = defaultFooter;
         }
         
-async function saveCompanySettings(event) {
-    event.preventDefault();
-    
-    const updatedData = {
-        id: companyData.id || 1,
-        name: document.getElementById('companyName').value,
-        email: document.getElementById('companyEmail').value,
-        phone: document.getElementById('companyPhone').value,
-        address: document.getElementById('companyAddress').value,
-        tax_id: document.getElementById('companyTaxId').value,
-        currency: document.getElementById('companyCurrency').value,
-        website: document.getElementById('companyWebsite').value,
-        logo_url: document.getElementById('companyLogo').value,
-        bank_name: document.getElementById('bankName').value,
-        bank_account: document.getElementById('bankAccount').value,
-        bank_routing: document.getElementById('bankRouting').value
-    };
-    
-    try {
-        if (companyData.id) {
-            await CompanyAPI.update(companyData.id, updatedData);
-        } else {
-            await CompanyAPI.create(updatedData);
+        async function saveCompanySettings(event) {
+            event.preventDefault();
+            
+            const updatedData = {
+                id: companyData.id || 1,
+                name: document.getElementById('companyName').value,
+                email: document.getElementById('companyEmail').value,
+                phone: document.getElementById('companyPhone').value,
+                address: document.getElementById('companyAddress').value,
+                tax_id: document.getElementById('companyTaxId').value,
+                currency: document.getElementById('companyCurrency').value,
+                website: document.getElementById('companyWebsite').value,
+                logo_url: document.getElementById('companyLogo').value,
+                bank_name: document.getElementById('bankName').value,
+                bank_account: document.getElementById('bankAccount').value,
+                bank_routing: document.getElementById('bankRouting').value
+            };
+            
+            try {
+                if (typeof CompanyAPI !== 'undefined') {
+                    if (companyData.id && companyData.id !== 1) {
+                        await CompanyAPI.update(companyData.id, updatedData);
+                    } else {
+                        await CompanyAPI.create(updatedData);
+                    }
+                }
+                companyData = updatedData;
+                
+                // Save to localStorage for quick access
+                localStorage.setItem('companySettings', JSON.stringify(updatedData));
+                
+                showAlert('Company settings saved successfully!', 'success');
+                updatePreview();
+                
+                // Update company name in header on all pages
+                updateAllPageHeaders(updatedData.name);
+                
+            } catch (error) {
+                console.error('Error saving to API:', error);
+                // Fallback to localStorage only
+                localStorage.setItem('companySettings', JSON.stringify(updatedData));
+                showAlert('Settings saved locally!', 'success');
+                updatePreview();
+                updateAllPageHeaders(updatedData.name);
+            }
         }
-        companyData = updatedData;
-        
-        // Also save to localStorage for quick access
-        localStorage.setItem('companySettings', JSON.stringify(updatedData));
-        
-        showAlert('Company settings saved successfully!', 'success');
-        updatePreview();
-        
-        // Update company name in header on all pages
-        updateAllPageHeaders(updatedData.name);
-        
-    } catch (error) {
-        console.error('Error saving to API:', error);
-        // Fallback to localStorage only
-        localStorage.setItem('companySettings', JSON.stringify(updatedData));
-        showAlert('Settings saved locally! (API not available)', 'success');
-        updatePreview();
-        updateAllPageHeaders(updatedData.name);
-    }
-}
-
-function updateAllPageHeaders(companyName) {
-    // Update current page header
-    const headerElement = document.getElementById('companyNameHeader');
-    if (headerElement) {
-        headerElement.textContent = `- ${companyName}`;
-    }
-    
-    // Store for other pages
-    localStorage.setItem('companyName', companyName);
-}
         
         function saveDefaults() {
             localStorage.setItem('defaultTerms', document.getElementById('defaultTerms').value);
@@ -467,6 +498,7 @@ function updateAllPageHeaders(companyName) {
             const phone = document.getElementById('companyPhone').value || '+1 (555) 000-0000';
             const address = document.getElementById('companyAddress').value || '123 Business Street';
             const logo = document.getElementById('companyLogo').value;
+            const currency = document.getElementById('companyCurrency').value;
             
             const previewHtml = `
                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
@@ -478,27 +510,35 @@ function updateAllPageHeaders(companyName) {
                 </div>
                 <p style="font-size: 0.875rem; color: #64748b;">${escapeHtml(address)}</p>
                 <hr style="margin: 0.5rem 0;">
-                <p style="font-size: 0.75rem; color: #64748b;">Currency: ${document.getElementById('companyCurrency').value}</p>
+                <p style="font-size: 0.75rem; color: #64748b;">Currency: ${escapeHtml(currency)}</p>
             `;
             
-            document.getElementById('previewContent').innerHTML = previewHtml;
+            const previewContent = document.getElementById('previewContent');
+            if (previewContent) {
+                previewContent.innerHTML = previewHtml;
+            }
             
             // Update logo preview
-            if (logo) {
-                document.getElementById('logoPreview').innerHTML = `<img src="${logo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
-            } else {
-                document.getElementById('logoPreview').innerHTML = '📄';
+            const logoPreview = document.getElementById('logoPreview');
+            if (logoPreview) {
+                if (logo) {
+                    logoPreview.innerHTML = `<img src="${logo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
+                } else {
+                    logoPreview.innerHTML = '📄';
+                }
             }
         }
         
         function showAlert(message, type) {
-            const alert = document.getElementById('alert');
-            alert.textContent = message;
-            alert.className = `alert alert-${type}`;
-            alert.style.display = 'block';
+            const alertElement = document.getElementById('alert');
+            if (!alertElement) return;
+            
+            alertElement.textContent = message;
+            alertElement.className = `alert alert-${type}`;
+            alertElement.style.display = 'block';
             
             setTimeout(() => {
-                alert.style.display = 'none';
+                alertElement.style.display = 'none';
             }, 3000);
         }
         
@@ -513,26 +553,28 @@ function updateAllPageHeaders(companyName) {
         }
         
         // Event listeners
-        document.getElementById('companyForm').addEventListener('submit', saveCompanySettings);
-        document.getElementById('bankForm').addEventListener('submit', saveCompanySettings);
-        document.getElementById('invoiceDefaultsForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            saveDefaults();
-        });
+        const companyForm = document.getElementById('companyForm');
+        const bankForm = document.getElementById('bankForm');
+        const invoiceDefaultsForm = document.getElementById('invoiceDefaultsForm');
+        
+        if (companyForm) companyForm.addEventListener('submit', saveCompanySettings);
+        if (bankForm) bankForm.addEventListener('submit', saveCompanySettings);
+        if (invoiceDefaultsForm) {
+            invoiceDefaultsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveDefaults();
+            });
+        }
         
         // Live preview on input changes
         const inputs = ['companyName', 'companyEmail', 'companyPhone', 'companyAddress', 'companyLogo', 'companyCurrency'];
         inputs.forEach(id => {
-            document.getElementById(id).addEventListener('input', updatePreview);
+            const element = document.getElementById(id);
+            if (element) element.addEventListener('input', updatePreview);
         });
         
         // Load settings on page load
         loadCompanySettings();
-        
-        // Update global company name for other pages
-        window.updateCompanyName = function(name) {
-            localStorage.setItem('companyName', name);
-        };
     </script>
 </body>
 </html>

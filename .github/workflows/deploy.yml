@@ -1,0 +1,85 @@
+name: Deploy to GitHub Pages & Cloudflare
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  # Backend Deployment to Cloudflare Workers
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install Wrangler
+        run: npm install -g wrangler
+      
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm install
+      
+      - name: Deploy to Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          cd backend
+          wrangler deploy --env production
+      
+      - name: Run Database Migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          cd backend
+          wrangler d1 execute invoice-db --remote --file=./src/schema.sql
+
+  # Frontend Deployment to GitHub Pages
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Inject Variables into Frontend
+        run: |
+          # Create config.js with variables
+          cat > frontend/js/config.js << 'EOF'
+          // Auto-generated config file - DO NOT EDIT MANUALLY
+          window.APP_CONFIG = {
+              API_BASE: '${{ vars.API_BASE_URL }}',
+              APP_NAME: '${{ vars.APP_NAME }}',
+              VERSION: '${{ vars.VERSION }}',
+              ENVIRONMENT: '${{ vars.ENVIRONMENT }}',
+              BUILD_TIME: '$(date -u +"%Y-%m-%dT%H:%M:%SZ")'
+          };
+          console.log('✅ App Config Loaded:', window.APP_CONFIG);
+          EOF
+          
+          # Also create a version file for cache busting
+          echo "export const VERSION = '${{ vars.VERSION }}';" > frontend/version.js
+          
+          # Update api.js to use the config
+          sed -i "s|const API_BASE = '.*';|const API_BASE = window.APP_CONFIG?.API_BASE || '${{ vars.API_BASE_URL }}';|" frontend/js/api.js
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy frontend to GitHub Pages - ${{ vars.VERSION }}'

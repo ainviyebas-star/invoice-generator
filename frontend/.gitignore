@@ -4,3 +4,4 @@
 .env.local
 backend/
 .netlify/
+js/VITE_config.js

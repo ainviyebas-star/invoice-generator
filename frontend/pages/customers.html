@@ -27,6 +27,8 @@
             <button class="btn btn-primary" onclick="openCustomerModal()">+ Add Customer</button>
         </div>
 
+        <div id="alert" class="alert" style="display: none;"></div>  <!-- ADD THIS LINE -->
+
         <!-- Search and Filter -->
         <div class="search-bar">
             <input type="text" id="searchInput" placeholder="Search customers..." class="search-input">
@@ -224,11 +226,29 @@
             background: #e2e8f0;
         }
     </style>
-
+    <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/header.js"></script>
     <script>
         let customers = [];
+
+// ============================================
+    // ADD THIS SHOWALERT FUNCTION HERE
+    // ============================================
+    function showAlert(message, type) {
+        const alert = document.getElementById('alert');
+        if (!alert) return;
+        
+        alert.textContent = message;
+        alert.className = `alert alert-${type}`;
+        alert.style.display = 'block';
+        
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 3000);
+    }
+    // ============================================
+
         
         async function loadCustomers() {
             try {

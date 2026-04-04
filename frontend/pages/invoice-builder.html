@@ -251,6 +251,8 @@
     <main class="container">
         <div class="invoice-builder">
             <h2>Create New Invoice</h2>
+
+            <div id="alert" class="alert" style="display: none;"></div>  <!-- ADD THIS LINE -->            
             
             <form id="invoiceForm">
                 <!-- Customer & Template Section -->
@@ -360,12 +362,29 @@
             </form>
         </div>
     </main>
-
+    <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/header.js"></script>
     <script>
         let items = [];
         
+ // ============================================
+    // ADD THIS SHOWALERT FUNCTION HERE
+    // ============================================
+    function showAlert(message, type) {
+        const alert = document.getElementById('alert');
+        if (!alert) return;
+        
+        alert.textContent = message;
+        alert.className = `alert alert-${type}`;
+        alert.style.display = 'block';
+        
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 3000);
+    }
+    // ============================================
+
         // Display company name in header
         function displayCompanyName() {
             const settings = localStorage.getItem('companySettings');
