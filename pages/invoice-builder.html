@@ -157,11 +157,23 @@
             font-size: 1rem;
         }
         
-        .tax-row {
+        .tax-summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            font-size: 1rem;
+            border-top: 1px dashed #cbd5e1;
+            margin-top: 0.25rem;
+            color: #475569;
+        }
+        
+        .tax-controls-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.5rem 0;
+            padding: 0.75rem 0;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 0.5rem;
         }
         
         .tax-controls {
@@ -175,6 +187,7 @@
             align-items: center;
             gap: 0.5rem;
             cursor: pointer;
+            font-size: 0.875rem;
         }
         
         .tax-controls input[type="checkbox"] {
@@ -402,15 +415,26 @@
                     </div>
                 </div>
                 
-                <!-- Summary with Tax Controls -->
+                <!-- Summary with Tax Display -->
                 <div class="summary-card">
                     <div class="summary-row">
                         <span>Subtotal:</span>
                         <span id="subtotalDisplay">$0.00</span>
                     </div>
                     
-                    <!-- Tax Row with Controls -->
-                    <div class="tax-row" id="taxRow" style="display: none;">
+                    <!-- Tax Summary Row - Shows the tax amount when applied -->
+                    <div class="tax-summary-row" id="taxSummaryRow" style="display: none;">
+                        <span id="taxNameDisplay">GST</span>
+                        <span id="taxAmountDisplay">$0.00</span>
+                    </div>
+                    
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="totalDisplay">$0.00</span>
+                    </div>
+                    
+                    <!-- Tax Controls Row -->
+                    <div class="tax-controls-row" id="taxRow" style="display: none;">
                         <div class="tax-controls">
                             <label>
                                 <input type="checkbox" id="applyTaxCheckbox" onchange="toggleTax()">
@@ -418,12 +442,6 @@
                             </label>
                             <button type="button" class="remove-tax-btn" id="removeTaxBtn" onclick="removeTax()" style="display: none;">Remove Tax</button>
                         </div>
-                        <span id="taxAmountDisplay">$0.00</span>
-                    </div>
-                    
-                    <div class="summary-row total">
-                        <span>Total:</span>
-                        <span id="totalDisplay">$0.00</span>
                     </div>
                 </div>
                 
@@ -470,7 +488,7 @@
         }
         
         // ============================================
-        // TAX FUNCTIONS - ADD THIS SECTION
+        // TAX FUNCTIONS
         // ============================================
         async function loadTaxSettings() {
             try {
@@ -503,15 +521,10 @@
                 
                 // Update UI
                 const taxRow = document.getElementById('taxRow');
-                const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
                 const taxLabel = document.getElementById('taxLabel');
                 
                 if (taxRow) {
                     taxRow.style.display = taxEnabled ? 'flex' : 'none';
-                }
-                
-                if (applyTaxCheckbox) {
-                    applyTaxCheckbox.checked = false;
                 }
                 
                 if (taxLabel && taxEnabled) {
@@ -531,17 +544,22 @@
         function toggleTax() {
             const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
             const removeTaxBtn = document.getElementById('removeTaxBtn');
+            const taxSummaryRow = document.getElementById('taxSummaryRow');
+            const taxNameDisplay = document.getElementById('taxNameDisplay');
             
             applyTax = applyTaxCheckbox.checked;
             
             if (applyTax) {
                 calculateTax();
                 if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
+                if (taxSummaryRow) taxSummaryRow.style.display = 'flex';
+                if (taxNameDisplay) taxNameDisplay.textContent = `${taxName} (${taxRate}%)`;
                 showAlert(`${taxName} (${taxRate}%) applied to invoice`, 'info');
             } else {
                 taxAmount = 0;
                 updateSummary();
                 if (removeTaxBtn) removeTaxBtn.style.display = 'none';
+                if (taxSummaryRow) taxSummaryRow.style.display = 'none';
             }
         }
         
@@ -556,12 +574,14 @@
         function removeTax() {
             const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
             const removeTaxBtn = document.getElementById('removeTaxBtn');
+            const taxSummaryRow = document.getElementById('taxSummaryRow');
             
             if (applyTaxCheckbox) applyTaxCheckbox.checked = false;
             applyTax = false;
             taxAmount = 0;
             updateSummary();
             if (removeTaxBtn) removeTaxBtn.style.display = 'none';
+            if (taxSummaryRow) taxSummaryRow.style.display = 'none';
             
             showAlert(`${taxName} removed from invoice`, 'info');
         }

@@ -245,12 +245,13 @@
                 renderInvoice();
             } catch (error) {
                 console.error('Error loading invoice:', error);
-                document.getElementById('invoiceContent').innerHTML = '<div class="loading">Error loading invoice</div>';
+                document.getElementById('invoiceContent').innerHTML = '<div class="loading">Error loading invoice: ' + error.message + '</div>';
+                showAlert('Error loading invoice: ' + error.message, 'error');
             }
         }
         
         // ============================================
-        // UPDATED RENDER INVOICE FUNCTION WITH TAX DISPLAY
+        // RENDER INVOICE FUNCTION WITH PROPER TAX DISPLAY
         // ============================================
         function renderInvoice() {
             const invoice = currentInvoice;
@@ -265,19 +266,36 @@
             const taxAmount = invoice.tax_amount || (taxEnabled ? (subtotal * taxRate) / 100 : 0);
             const total = subtotal + taxAmount;
             
-            // Get company info
-            const companyName = invoice.company_name || 
-                               (localStorage.getItem('companySettings') ? 
-                                JSON.parse(localStorage.getItem('companySettings')).name : 'Your Company');
+            // Get company info from localStorage if not in invoice
+            let companyName = invoice.company_name || 'Your Company';
+            let companyEmail = invoice.company_email || '';
+            let companyPhone = invoice.company_phone || '';
+            let companyAddress = invoice.company_address || '';
+            let companyTaxNumber = invoice.tax_number || '';
+            
+            // Try to get from localStorage if not in invoice
+            if (!companyName || companyName === 'Your Company') {
+                const settings = localStorage.getItem('companySettings');
+                if (settings) {
+                    try {
+                        const company = JSON.parse(settings);
+                        companyName = company.name || 'Your Company';
+                        companyEmail = company.email || '';
+                        companyPhone = company.phone || '';
+                        companyAddress = company.address || '';
+                        companyTaxNumber = company.tax_number || '';
+                    } catch(e) {}
+                }
+            }
             
             const html = `
                 <div class="invoice-header">
                     <div class="company-info">
                         <h2>${escapeHtml(companyName)}</h2>
-                        <p>${escapeHtml(invoice.company_email || '')}</p>
-                        <p>${escapeHtml(invoice.company_phone || '')}</p>
-                        <p>${escapeHtml(invoice.company_address || '')}</p>
-                        ${invoice.tax_number ? `<p><strong>${taxName} No:</strong> ${escapeHtml(invoice.tax_number)}</p>` : ''}
+                        ${companyEmail ? `<p>${escapeHtml(companyEmail)}</p>` : ''}
+                        ${companyPhone ? `<p>${escapeHtml(companyPhone)}</p>` : ''}
+                        ${companyAddress ? `<p>${escapeHtml(companyAddress)}</p>` : ''}
+                        ${companyTaxNumber ? `<p><strong>${escapeHtml(taxName)} No:</strong> ${escapeHtml(companyTaxNumber)}</p>` : ''}
                     </div>
                     <div class="invoice-title">
                         <h3>INVOICE</h3>
@@ -290,8 +308,8 @@
                     <div class="client-info">
                         <strong>Bill To:</strong>
                         <p>${escapeHtml(invoice.customer_name || '')}</p>
-                        <p>${escapeHtml(invoice.customer_email || '')}</p>
-                        <p>${escapeHtml(invoice.customer_address || '')}</p>
+                        ${invoice.customer_email ? `<p>${escapeHtml(invoice.customer_email)}</p>` : ''}
+                        ${invoice.customer_address ? `<p>${escapeHtml(invoice.customer_address)}</p>` : ''}
                         ${invoice.customer_tax_id ? `<p><strong>Tax ID:</strong> ${escapeHtml(invoice.customer_tax_id)}</p>` : ''}
                     </div>
                     <div class="invoice-info">
@@ -303,31 +321,36 @@
                 
                 <table class="items-table">
                     <thead>
-                        <tr><th>Description</th><th>Quantity</th><th>Unit Price</th><th>Total</th></tr>
+                        <tr>
+                            <th>Description</th>
+                            <th style="text-align: center;">Quantity</th>
+                            <th style="text-align: right;">Unit Price</th>
+                            <th style="text-align: right;">Total</th>
+                        </tr>
                     </thead>
                     <tbody>
                         ${items.map(item => `
                             <tr>
                                 <td>${escapeHtml(item.description)}</td>
-                                <td>${item.quantity}</td>
-                                <td>$${item.unit_price.toFixed(2)}</td>
-                                <td>$${item.total.toFixed(2)}</td>
+                                <td style="text-align: center;">${item.quantity}</td>
+                                <td style="text-align: right;">$${item.unit_price.toFixed(2)}</td>
+                                <td style="text-align: right;">$${item.total.toFixed(2)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
                 
                 <div class="totals">
-                    <p>Subtotal: $${subtotal.toFixed(2)}</p>
+                    <p><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</p>
                     ${taxEnabled && taxAmount > 0 ? `
-                        <p>${escapeHtml(taxName)} (${taxRate}%): $${taxAmount.toFixed(2)}</p>
-                        <div class="tax-details">Tax included as per ${escapeHtml(taxName)} rules</div>
+                        <p><strong>${escapeHtml(taxName)} (${taxRate}%):</strong> $${taxAmount.toFixed(2)}</p>
+                        <div class="tax-details">Tax calculated at ${taxRate}% as per ${escapeHtml(taxName)} rules</div>
                     ` : ''}
-                    <p class="total-amount">Total: $${total.toFixed(2)}</p>
+                    <p class="total-amount"><strong>Total:</strong> $${total.toFixed(2)}</p>
                 </div>
                 
                 ${invoice.notes ? `<div class="notes" style="margin-top: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;"><strong>Notes:</strong><br>${escapeHtml(invoice.notes)}</div>` : ''}
-                ${invoice.terms ? `<div class="terms" style="margin-top: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;"><strong>Terms & Conditions:</strong><br>${escapeHtml(invoice.terms)}</div>` : ''}
+                ${invoice.terms ? `<div class="terms" style="margin-top: 0.5rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;"><strong>Terms & Conditions:</strong><br>${escapeHtml(invoice.terms)}</div>` : ''}
             `;
             
             document.getElementById('invoiceContent').innerHTML = html;

@@ -44,6 +44,7 @@
         .invoices-table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 800px;
         }
         
         .invoices-table th,
@@ -101,6 +102,7 @@
         .action-buttons {
             display: flex;
             gap: 0.5rem;
+            flex-wrap: wrap;
         }
         
         .btn-icon {
@@ -122,6 +124,7 @@
             justify-content: center;
             gap: 0.5rem;
             margin-top: 2rem;
+            flex-wrap: wrap;
         }
         
         .pagination button {
@@ -206,8 +209,13 @@
             background: #e2e8f0;
             padding: 0.15rem 0.4rem;
             border-radius: 4px;
-            margin-left: 0.5rem;
             display: inline-block;
+            white-space: nowrap;
+        }
+        
+        .amount-cell {
+            font-weight: 600;
+            white-space: nowrap;
         }
         
         @media (max-width: 768px) {
@@ -223,6 +231,15 @@
             .invoices-table td {
                 padding: 0.75rem;
                 font-size: 0.875rem;
+            }
+            
+            .action-buttons {
+                gap: 0.25rem;
+            }
+            
+            .btn-icon {
+                font-size: 1rem;
+                padding: 0.2rem 0.4rem;
             }
         }
     </style>
@@ -391,6 +408,7 @@
                 console.error('Error loading invoices:', error);
                 const tbody = document.getElementById('invoicesTableBody');
                 tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Error loading invoices: ${error.message}</td></tr>`;
+                showAlert('Error loading invoices: ' + error.message, 'error');
             }
         }
         
@@ -470,18 +488,20 @@
                         <td>${escapeHtml(invoice.customer_name || 'Unknown')}</td>
                         <td>${invoice.issue_date}</td>
                         <td>${invoice.due_date}</td>
-                        <td><strong>$${(invoice.total || 0).toFixed(2)}</strong></td>
+                        <td class="amount-cell">$${(invoice.total || 0).toFixed(2)}</td>
                         <td>
-                            ${taxEnabled ? `<span class="tax-badge" title="${taxName} ${taxRate}%">${taxName} ${taxRate}%</span>` : '<span style="color: #64748b;">—</span>'}
+                            ${taxEnabled && taxRate > 0 ? 
+                                `<span class="tax-badge" title="${taxName} ${taxRate}%">${escapeHtml(taxName)} ${taxRate}%</span>` : 
+                                '<span style="color: #64748b;">—</span>'}
                         </td>
                         <td>
                             <span class="status-badge status-${invoice.status}">${invoice.status}</span>
                         </td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn-icon" onclick="viewInvoice(${invoice.id})" title="View">👁️</button>
-                                <button class="btn-icon" onclick="editInvoice(${invoice.id})" title="Edit">✏️</button>
-                                <button class="btn-icon" onclick="deleteInvoice(${invoice.id})" title="Delete">🗑️</button>
+                                <button class="btn-icon" onclick="viewInvoice(${invoice.id})" title="View Invoice">👁️</button>
+                                <button class="btn-icon" onclick="editInvoice(${invoice.id})" title="Edit Invoice">✏️</button>
+                                <button class="btn-icon" onclick="deleteInvoice(${invoice.id})" title="Delete Invoice">🗑️</button>
                                 ${invoice.status !== 'paid' ? `<button class="btn-icon" onclick="markAsPaid(${invoice.id})" title="Mark as Paid">✅</button>` : ''}
                                 <button class="btn-icon" onclick="downloadPDF(${invoice.id})" title="Download PDF">📄</button>
                             </div>
