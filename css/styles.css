@@ -28,44 +28,6 @@ body {
     align-items: center;
 }
 
-.tax-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0;
-    border-top: 1px dashed #e2e8f0;
-    margin-top: 0.5rem;
-}
-
-.tax-controls {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.tax-controls label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-}
-
-.remove-tax-btn {
-    background: #fee2e2;
-    border: none;
-    padding: 0.25rem 0.75rem;
-    border-radius: 6px;
-    cursor: pointer;
-    color: #dc2626;
-    font-size: 0.75rem;
-    transition: all 0.2s;
-}
-
-.remove-tax-btn:hover {
-    background: #fecaca;
-}
-
 
 .logo {
     font-size: 1.5rem;
@@ -486,4 +448,68 @@ body {
     background: #fef9c3;
     color: #854d0e;
     border: 1px solid #fde047;
+}
+
+
+/* ============================================ */
+/* TAX STYLES - Add this to the end of styles.css */
+/* ============================================ */
+
+/* Tax Summary Row - shows the tax amount when applied */
+.tax-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    border-top: 1px dashed #cbd5e1;
+    margin-top: 0.25rem;
+    color: #475569;
+}
+
+/* Tax Controls Row - contains the checkbox */
+.tax-controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 0.5rem;
+}
+
+/* Tax Controls container */
+.tax-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Tax checkbox label */
+.tax-controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+/* Tax checkbox input */
+.tax-controls input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}
+
+/* Remove Tax button */
+.remove-tax-btn {
+    background: #fee2e2;
+    border: none;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #dc2626;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.remove-tax-btn:hover {
+    background: #fecaca;
 }

@@ -404,34 +404,34 @@
                 </div>
                 
                 <!-- Summary with Tax Display -->
-                <div class="summary-card">
-                    <div class="summary-row">
-                        <span>Subtotal:</span>
-                        <span id="subtotalDisplay">$0.00</span>
-                    </div>
-                    
-                    <!-- Tax Summary Row - Shows the tax amount when applied -->
-                    <div class="tax-summary-row" id="taxSummaryRow" style="display: none;">
-                        <span id="taxNameDisplay">GST</span>
-                        <span id="taxAmountDisplay">$0.00</span>
-                    </div>
-                    
-                    <div class="summary-row total">
-                        <span>Total:</span>
-                        <span id="totalDisplay">$0.00</span>
-                    </div>
-                    
-                    <!-- Tax Controls Row - Contains the checkbox (ALWAYS VISIBLE if tax enabled in settings) -->
-                    <div class="tax-controls-row" id="taxRow">
-                        <div class="tax-controls">
-                            <label>
-                                <input type="checkbox" id="applyTaxCheckbox" onchange="toggleTax()">
-                                <span id="taxLabel">Add Tax</span>
-                            </label>
-                            <button type="button" class="remove-tax-btn" id="removeTaxBtn" onclick="removeTax()" style="display: none;">Remove Tax</button>
-                        </div>
-                    </div>
-                </div>
+<div class="summary-card">
+    <div class="summary-row">
+        <span>Subtotal:</span>
+        <span id="subtotalDisplay">$0.00</span>
+    </div>
+    
+    <!-- Tax Summary Row - Shows tax amount when applied -->
+    <div class="tax-summary-row" id="taxSummaryRow" style="display: none;">
+        <span id="taxNameDisplay">GST</span>
+        <span id="taxAmountDisplay">$0.00</span>
+    </div>
+    
+    <div class="summary-row total">
+        <span>Total:</span>
+        <span id="totalDisplay">$0.00</span>
+    </div>
+    
+    <!-- Tax Controls - This is the checkbox you need -->
+    <div class="tax-controls-row" id="taxRow">
+        <div class="tax-controls">
+            <label>
+                <input type="checkbox" id="applyTaxCheckbox" onchange="toggleTax()">
+                <span id="taxLabel">Add Tax</span>
+            </label>
+            <button type="button" class="remove-tax-btn" id="removeTaxBtn" onclick="removeTax()" style="display: none;">Remove Tax</button>
+        </div>
+    </div>
+</div>
                 
                 <!-- Action Buttons -->
                 <div class="action-buttons">
