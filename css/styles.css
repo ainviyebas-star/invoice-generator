@@ -35,6 +35,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    white-space: nowrap;
 }
 
 .nav-links {
@@ -63,13 +64,30 @@ body {
     font-size: 0.9rem;
     color: #3b82f6;
     font-weight: normal;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .company-name-header::before {
-    content: "•";
+    content: "-";
+    color: #cbd5e1;
+    font-weight: normal;
+}
+
+/* Add dash before company name when it has content */
+.company-name-header:not(:empty)::before {
+    content: "-";
     margin-right: 0.5rem;
     color: #cbd5e1;
 }
+
+/* Don't show dash when empty */
+.company-name-header:empty::before {
+    content: none;
+    display: none;
+}
+
 
 .dashboard-header {
     display: flex;
@@ -257,6 +275,18 @@ body {
     
     .container {
         padding: 0 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .logo {
+        font-size: 1.2rem;
+        flex-wrap: wrap;
+        white-space: normal;
+    }
+    
+    .company-name-header {
+        font-size: 0.8rem;
     }
 }
 
