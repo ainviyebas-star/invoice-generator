@@ -157,7 +157,6 @@
             font-size: 1rem;
         }
         
-        /* Tax Summary Row - shows the tax amount when applied */
         .tax-summary-row {
             display: flex;
             justify-content: space-between;
@@ -168,7 +167,6 @@
             color: #475569;
         }
         
-        /* Tax Controls Row - contains the checkbox */
         .tax-controls-row {
             display: flex;
             justify-content: space-between;
@@ -404,34 +402,34 @@
                 </div>
                 
                 <!-- Summary with Tax Display -->
-<div class="summary-card">
-    <div class="summary-row">
-        <span>Subtotal:</span>
-        <span id="subtotalDisplay">$0.00</span>
-    </div>
-    
-    <!-- Tax Summary Row - Shows tax amount when applied -->
-    <div class="tax-summary-row" id="taxSummaryRow" style="display: none;">
-        <span id="taxNameDisplay">GST</span>
-        <span id="taxAmountDisplay">$0.00</span>
-    </div>
-    
-    <div class="summary-row total">
-        <span>Total:</span>
-        <span id="totalDisplay">$0.00</span>
-    </div>
-    
-    <!-- Tax Controls - This is the checkbox you need -->
-    <div class="tax-controls-row" id="taxRow">
-        <div class="tax-controls">
-            <label>
-                <input type="checkbox" id="applyTaxCheckbox" onchange="toggleTax()">
-                <span id="taxLabel">Add Tax</span>
-            </label>
-            <button type="button" class="remove-tax-btn" id="removeTaxBtn" onclick="removeTax()" style="display: none;">Remove Tax</button>
-        </div>
-    </div>
-</div>
+                <div class="summary-card">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="subtotalDisplay">$0.00</span>
+                    </div>
+                    
+                    <!-- Tax Summary Row - Shows the tax amount when applied -->
+                    <div class="tax-summary-row" id="taxSummaryRow" style="display: none;">
+                        <span id="taxNameDisplay">GST</span>
+                        <span id="taxAmountDisplay">$0.00</span>
+                    </div>
+                    
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="totalDisplay">$0.00</span>
+                    </div>
+                    
+                    <!-- Tax Controls Row - Contains the checkbox -->
+                    <div class="tax-controls-row" id="taxRow">
+                        <div class="tax-controls">
+                            <label>
+                                <input type="checkbox" id="applyTaxCheckbox" onchange="toggleTax()">
+                                <span id="taxLabel">Add Tax</span>
+                            </label>
+                            <button type="button" class="remove-tax-btn" id="removeTaxBtn" onclick="removeTax()" style="display: none;">Remove Tax</button>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Action Buttons -->
                 <div class="action-buttons">
@@ -476,6 +474,30 @@
         }
         
         // ============================================
+        // TAX STATE PERSISTENCE
+        // ============================================
+        function saveTaxState() {
+            const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+            if (applyTaxCheckbox) {
+                localStorage.setItem('invoiceTaxState', applyTaxCheckbox.checked ? 'true' : 'false');
+            }
+        }
+        
+        function restoreTaxState() {
+            const savedState = localStorage.getItem('invoiceTaxState');
+            if (savedState === 'true') {
+                const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+                if (applyTaxCheckbox) {
+                    applyTaxCheckbox.checked = true;
+                    // Small delay to ensure items are loaded
+                    setTimeout(() => {
+                        toggleTax();
+                    }, 100);
+                }
+            }
+        }
+        
+        // ============================================
         // TAX FUNCTIONS
         // ============================================
         async function loadTaxSettings() {
@@ -515,13 +537,6 @@
                     taxLabel.textContent = 'Add Tax';
                 }
                 
-                // Show/hide tax row based on settings
-                const taxRow = document.getElementById('taxRow');
-                if (taxRow) {
-                    taxRow.style.display = taxEnabled && taxRate > 0 ? 'flex' : 'none';
-                    console.log('Tax row displayed:', taxEnabled && taxRate > 0);
-                }
-                
                 console.log('Tax settings loaded:', { taxEnabled, taxRate, taxName });
                 
             } catch (error) {
@@ -529,7 +544,6 @@
             }
         }
         
-        // Toggle tax on/off
         function toggleTax() {
             const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
             const removeTaxBtn = document.getElementById('removeTaxBtn');
@@ -537,6 +551,9 @@
             const taxNameDisplay = document.getElementById('taxNameDisplay');
             
             applyTax = applyTaxCheckbox.checked;
+            
+            // Save the state
+            saveTaxState();
             
             if (applyTax) {
                 calculateTax();
@@ -552,14 +569,12 @@
             }
         }
         
-        // Calculate tax amount
         function calculateTax() {
             const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
             taxAmount = (subtotal * taxRate) / 100;
             updateSummary();
         }
         
-        // Remove tax completely
         function removeTax() {
             const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
             const removeTaxBtn = document.getElementById('removeTaxBtn');
@@ -572,10 +587,12 @@
             if (removeTaxBtn) removeTaxBtn.style.display = 'none';
             if (taxSummaryRow) taxSummaryRow.style.display = 'none';
             
+            // Save the state
+            saveTaxState();
+            
             showAlert(`${taxName} removed from invoice`, 'info');
         }
         
-        // Update summary with tax
         function updateSummary() {
             const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
             const total = subtotal + taxAmount;
@@ -822,6 +839,9 @@
                 const result = await InvoiceAPI.create(invoiceData);
                 console.log('Result:', result);
                 
+                // Clear saved tax state after successful creation
+                localStorage.removeItem('invoiceTaxState');
+                
                 showAlert('✅ Invoice created successfully!', 'success');
                 setTimeout(() => {
                     window.location.href = 'invoices.html';
@@ -851,6 +871,7 @@
             await loadTemplates();
             await loadTaxSettings();
             addItem(); // Add one empty item row
+            restoreTaxState(); // Restore saved tax checkbox state
         }
         
         init();
