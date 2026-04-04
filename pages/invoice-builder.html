@@ -489,9 +489,17 @@
                 const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
                 if (applyTaxCheckbox) {
                     applyTaxCheckbox.checked = true;
-                    // Small delay to ensure items are loaded
+                    applyTax = true;
+                    // Recalculate tax after items are loaded
                     setTimeout(() => {
-                        toggleTax();
+                        calculateTax();
+                        updateSummary();
+                        const taxSummaryRow = document.getElementById('taxSummaryRow');
+                        const removeTaxBtn = document.getElementById('removeTaxBtn');
+                        const taxNameDisplay = document.getElementById('taxNameDisplay');
+                        if (taxSummaryRow) taxSummaryRow.style.display = 'flex';
+                        if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
+                        if (taxNameDisplay) taxNameDisplay.textContent = `${taxName} (${taxRate}%)`;
                     }, 100);
                 }
             }
@@ -871,7 +879,7 @@
             await loadTemplates();
             await loadTaxSettings();
             addItem(); // Add one empty item row
-            restoreTaxState(); // Restore saved tax checkbox state
+            restoreTaxState(); // Restore saved tax checkbox state AFTER tax settings are loaded
         }
         
         init();
