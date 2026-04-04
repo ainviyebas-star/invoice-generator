@@ -433,6 +433,8 @@
                 <button class="btn btn-primary" onclick="openTemplateEditor()">+ Create Custom Template</button>
             </div>
             
+            <div id="alert" class="alert" style="display: none;"></div>  <!-- ADD THIS LINE -->
+
             <div class="template-categories">
                 <button class="category-btn active" data-category="all">All Templates</button>
                 <button class="category-btn" data-category="minimal">Minimal</button>
@@ -524,7 +526,7 @@
             </div>
         </div>
     </div>
-
+    <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/header.js"></script>
     <script>
@@ -532,6 +534,23 @@
         let customFields = [];
         let editingTemplateId = null;
         
+ // ============================================
+    // ADD THIS SHOWALERT FUNCTION HERE
+    // ============================================
+    function showAlert(message, type) {
+        const alert = document.getElementById('alert');
+        if (!alert) return;
+        
+        alert.textContent = message;
+        alert.className = `alert alert-${type}`;
+        alert.style.display = 'block';
+        
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 3000);
+    }
+    // ============================================
+
         // Load templates from API
         async function loadTemplates() {
             try {

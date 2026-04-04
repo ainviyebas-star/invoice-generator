@@ -24,6 +24,9 @@
     <main class="container">
         <div class="invoice-builder">
             <h2>Edit Invoice</h2>
+
+             <div id="alert" class="alert" style="display: none;"></div>  <!-- ADD THIS LINE -->
+
             <form id="invoiceForm">
                 <div class="form-group">
                     <label>Customer</label>
@@ -80,7 +83,7 @@
             </form>
         </div>
     </main>
-
+    <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/header.js"></script>
     <script>
@@ -92,6 +95,24 @@
             return urlParams.get('id');
         }
         
+    // ============================================
+    // ADD THIS SHOWALERT FUNCTION HERE
+    // ============================================
+    function showAlert(message, type) {
+        const alert = document.getElementById('alert');
+        if (!alert) return;
+        
+        alert.textContent = message;
+        alert.className = `alert alert-${type}`;
+        alert.style.display = 'block';
+        
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 3000);
+    }
+    // ============================================
+
+
         async function loadInvoice() {
             const invoiceId = getInvoiceId();
             if (!invoiceId) {
