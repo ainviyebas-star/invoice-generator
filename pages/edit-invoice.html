@@ -5,18 +5,295 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Invoice - InvoicePro</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .invoice-builder {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        
+        .form-section {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .form-section:last-child {
+            border-bottom: none;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #475569;
+            font-size: 0.875rem;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        
+        .items-section {
+            margin: 2rem 0;
+        }
+        
+        .items-header {
+            display: grid;
+            grid-template-columns: 3fr 1fr 1.5fr 1.5fr 0.5fr;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        
+        .item-row {
+            display: grid;
+            grid-template-columns: 3fr 1fr 1.5fr 1.5fr 0.5fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+        
+        .item-row input {
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+        
+        .remove-item {
+            background: #fee2e2;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #dc2626;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .remove-item:hover {
+            background: #fecaca;
+            transform: scale(1.02);
+        }
+        
+        .add-item-btn {
+            background: #f1f5f9;
+            border: 2px dashed #cbd5e1;
+            padding: 0.75rem;
+            width: 100%;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #475569;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+        
+        .add-item-btn:hover {
+            background: #f8fafc;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .summary-card {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            font-size: 1rem;
+        }
+        
+        .tax-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+        
+        .tax-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .tax-controls label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .tax-controls input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+        
+        .remove-tax-btn {
+            background: #fee2e2;
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #dc2626;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+        
+        .remove-tax-btn:hover {
+            background: #fecaca;
+        }
+        
+        .summary-row.total {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            border-top: 2px solid #e2e8f0;
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: flex-end;
+        }
+        
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
+        @media (max-width: 768px) {
+            .items-header, .item-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .invoice-builder {
+                padding: 1rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .tax-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
         <div class="nav-container">
             <h1 class="logo">📄 InvoicePro <span id="companyNameHeader" class="company-name-header"></span></h1>
             <div class="nav-links">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="invoice-builder.html">Create Invoice</a>
-    <a href="invoices.html">Invoices</a>
-    <a href="customers.html">Customers</a>
-    <a href="templates.html">Templates</a>
-    <a href="settings.html">⚙️ Settings</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="invoice-builder.html">Create Invoice</a>
+                <a href="invoices.html">Invoices</a>
+                <a href="customers.html">Customers</a>
+                <a href="templates.html">Templates</a>
+                <a href="settings.html">⚙️ Settings</a>
             </div>
         </div>
     </nav>
@@ -25,64 +302,130 @@
         <div class="invoice-builder">
             <h2>Edit Invoice</h2>
 
-             <div id="alert" class="alert" style="display: none;"></div>  <!-- ADD THIS LINE -->
+            <div id="alert" class="alert" style="display: none;"></div>
 
             <form id="invoiceForm">
-                <div class="form-group">
-                    <label>Customer</label>
-                    <select id="customerSelect" required>
-                        <option value="">Select Customer</option>
-                    </select>
+                <!-- Invoice Information Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <span>📋</span>
+                        <span>Invoice Information</span>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Customer *</label>
+                            <select id="customerSelect" required>
+                                <option value="">Select Customer</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Invoice Number</label>
+                            <input type="text" id="invoiceNumber" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Issue Date</label>
+                            <input type="date" id="issueDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="dueDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="status">
+                                <option value="draft">Draft</option>
+                                <option value="sent">Sent</option>
+                                <option value="paid">Paid</option>
+                                <option value="overdue">Overdue</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Invoice Number</label>
-                    <input type="text" id="invoiceNumber" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Issue Date</label>
-                    <input type="date" id="issueDate" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Due Date</label>
-                    <input type="date" id="dueDate" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Status</label>
-                    <select id="status">
-                        <option value="draft">Draft</option>
-                        <option value="sent">Sent</option>
-                        <option value="paid">Paid</option>
-                        <option value="overdue">Overdue</option>
-                    </select>
-                </div>
-                
-                <div class="items-section">
-                    <h3>Invoice Items</h3>
+                <!-- Items Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <span>📦</span>
+                        <span>Invoice Items</span>
+                    </div>
+                    
+                    <div class="items-header">
+                        <div>Description</div>
+                        <div>Quantity</div>
+                        <div>Unit Price</div>
+                        <div>Total</div>
+                        <div></div>
+                    </div>
                     <div id="itemsContainer"></div>
-                    <button type="button" class="btn btn-secondary" onclick="addItem()">+ Add Item</button>
+                    
+                    <button type="button" class="add-item-btn" onclick="addItem()">
+                        + Add Item
+                    </button>
                 </div>
                 
-                <div class="form-group">
-                    <label>Notes</label>
-                    <textarea id="notes" rows="3"></textarea>
+                <!-- Notes & Terms -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <span>📝</span>
+                        <span>Additional Information</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="notes" rows="3" placeholder="Thank you for your business!"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Terms & Conditions</label>
+                        <textarea id="terms" rows="2" placeholder="Payment due within 30 days"></textarea>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Terms & Conditions</label>
-                    <textarea id="terms" rows="2"></textarea>
+                <!-- Summary with Tax -->
+                <div class="summary-card">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="subtotalDisplay">$0.00</span>
+                    </div>
+                    
+                    <!-- Tax Row -->
+                    <div class="tax-row" id="taxRow" style="display: none;">
+                        <div class="tax-controls">
+                            <label>
+                                <input type="checkbox" id="applyTaxCheckbox" onchange="toggleTax()">
+                                <span id="taxLabel">Add Tax</span>
+                            </label>
+                            <button type="button" class="remove-tax-btn" id="removeTaxBtn" onclick="removeTax()" style="display: none;">Remove Tax</button>
+                        </div>
+                        <span id="taxAmountDisplay">$0.00</span>
+                    </div>
+                    
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="totalDisplay">$0.00</span>
+                    </div>
                 </div>
                 
-                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                    <button type="submit" class="btn btn-primary">Update Invoice</button>
-                    <button type="button" class="btn btn-secondary" onclick="window.location.href='view-invoice.html?id=' + getInvoiceId()">Cancel</button>
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='view-invoice.html?id=' + getInvoiceId()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Update Invoice
+                    </button>
                 </div>
             </form>
         </div>
     </main>
+    
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/header.js"></script>
@@ -90,34 +433,130 @@
         let items = [];
         let originalInvoice = null;
         
+        // Tax variables
+        let taxEnabled = false;
+        let taxRate = 0;
+        let taxName = 'GST';
+        let taxAmount = 0;
+        let applyTax = false;
+        
         function getInvoiceId() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');
         }
         
-    // ============================================
-    // ADD THIS SHOWALERT FUNCTION HERE
-    // ============================================
-    function showAlert(message, type) {
-        const alert = document.getElementById('alert');
-        if (!alert) return;
+        // ============================================
+        // SHOW ALERT FUNCTION
+        // ============================================
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            if (!alert) return;
+            
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
         
-        alert.textContent = message;
-        alert.className = `alert alert-${type}`;
-        alert.style.display = 'block';
+        // ============================================
+        // TAX FUNCTIONS
+        // ============================================
+        async function loadTaxSettings() {
+            try {
+                // Try to get from localStorage first
+                const savedTax = localStorage.getItem('taxSettings');
+                if (savedTax) {
+                    const tax = JSON.parse(savedTax);
+                    taxEnabled = tax.tax_enabled === 1;
+                    taxRate = tax.tax_rate || 0;
+                    taxName = tax.tax_name || 'GST';
+                }
+                
+                // Try to get from API
+                if (typeof CompanyAPI !== 'undefined') {
+                    const companies = await CompanyAPI.getAll();
+                    if (companies && companies.length > 0) {
+                        if (companies[0].tax_enabled !== undefined) {
+                            taxEnabled = companies[0].tax_enabled === 1;
+                            taxRate = companies[0].tax_rate || 0;
+                            taxName = companies[0].tax_name || 'GST';
+                        }
+                    }
+                }
+                
+                // Update UI
+                const taxRow = document.getElementById('taxRow');
+                const taxLabel = document.getElementById('taxLabel');
+                
+                if (taxRow) {
+                    taxRow.style.display = taxEnabled ? 'flex' : 'none';
+                }
+                
+                if (taxLabel && taxEnabled) {
+                    taxLabel.textContent = `${taxName} (${taxRate}%)`;
+                }
+                
+            } catch (error) {
+                console.error('Error loading tax settings:', error);
+            }
+        }
         
-        setTimeout(() => {
-            alert.style.display = 'none';
-        }, 3000);
-    }
-    // ============================================
-
-
+        function toggleTax() {
+            const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+            const removeTaxBtn = document.getElementById('removeTaxBtn');
+            
+            applyTax = applyTaxCheckbox.checked;
+            
+            if (applyTax) {
+                calculateTax();
+                if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
+                showAlert(`${taxName} (${taxRate}%) applied to invoice`, 'info');
+            } else {
+                taxAmount = 0;
+                updateSummary();
+                if (removeTaxBtn) removeTaxBtn.style.display = 'none';
+            }
+        }
+        
+        function calculateTax() {
+            const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
+            taxAmount = (subtotal * taxRate) / 100;
+            updateSummary();
+        }
+        
+        function removeTax() {
+            const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+            const removeTaxBtn = document.getElementById('removeTaxBtn');
+            
+            if (applyTaxCheckbox) applyTaxCheckbox.checked = false;
+            applyTax = false;
+            taxAmount = 0;
+            updateSummary();
+            if (removeTaxBtn) removeTaxBtn.style.display = 'none';
+            
+            showAlert(`${taxName} removed from invoice`, 'info');
+        }
+        
+        function updateSummary() {
+            const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
+            const total = subtotal + taxAmount;
+            
+            document.getElementById('subtotalDisplay').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('taxAmountDisplay').textContent = `$${taxAmount.toFixed(2)}`;
+            document.getElementById('totalDisplay').textContent = `$${total.toFixed(2)}`;
+        }
+        // ============================================
+        
         async function loadInvoice() {
             const invoiceId = getInvoiceId();
             if (!invoiceId) {
-                alert('Invalid invoice ID');
-                window.location.href = 'dashboard.html';
+                showAlert('Invalid invoice ID', 'error');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
                 return;
             }
             
@@ -133,13 +572,32 @@
                 document.getElementById('notes').value = originalInvoice.notes || '';
                 document.getElementById('terms').value = originalInvoice.terms || '';
                 
+                // Load tax settings and set current tax state from invoice
+                await loadTaxSettings();
+                
+                // Set tax checkbox based on invoice
+                const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+                if (applyTaxCheckbox && originalInvoice.tax_enabled === 1) {
+                    applyTaxCheckbox.checked = true;
+                    applyTax = true;
+                    taxAmount = originalInvoice.tax_amount || 0;
+                    const removeTaxBtn = document.getElementById('removeTaxBtn');
+                    if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
+                } else if (applyTaxCheckbox) {
+                    applyTaxCheckbox.checked = false;
+                    applyTax = false;
+                    taxAmount = 0;
+                }
+                
                 await loadCustomers();
                 document.getElementById('customerSelect').value = originalInvoice.customer_id;
                 
                 renderItems();
+                updateSummary();
+                
             } catch (error) {
                 console.error('Error loading invoice:', error);
-                alert('Error loading invoice: ' + error.message);
+                showAlert('Error loading invoice: ' + error.message, 'error');
             }
         }
         
@@ -148,7 +606,7 @@
                 const customers = await CustomerAPI.getAll();
                 const select = document.getElementById('customerSelect');
                 select.innerHTML = '<option value="">Select Customer</option>' + 
-                    customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                    customers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
             } catch (error) {
                 console.error('Error loading customers:', error);
             }
@@ -157,11 +615,15 @@
         function addItem() {
             items.push({ description: '', quantity: 1, unit_price: 0, total: 0 });
             renderItems();
+            if (applyTax) calculateTax();
+            updateSummary();
         }
         
         function removeItem(index) {
             items.splice(index, 1);
             renderItems();
+            if (applyTax) calculateTax();
+            updateSummary();
         }
         
         function updateItem(index, field, value) {
@@ -170,12 +632,14 @@
                 items[index].total = (items[index].quantity || 0) * (items[index].unit_price || 0);
             }
             renderItems();
+            if (applyTax) calculateTax();
+            updateSummary();
         }
         
         function renderItems() {
             const container = document.getElementById('itemsContainer');
             if (items.length === 0) {
-                container.innerHTML = '<p>No items added. Click "Add Item" to start.</p>';
+                container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 2rem;">No items added. Click "Add Item" to start.</p>';
                 return;
             }
             
@@ -184,18 +648,18 @@
                     <input type="text" placeholder="Description" value="${escapeHtml(item.description)}" 
                            onchange="updateItem(${idx}, 'description', this.value)">
                     <input type="number" placeholder="Qty" value="${item.quantity}" 
-                           onchange="updateItem(${idx}, 'quantity', this.value)">
+                           onchange="updateItem(${idx}, 'quantity', parseFloat(this.value))">
                     <input type="number" placeholder="Unit Price" value="${item.unit_price}" 
-                           onchange="updateItem(${idx}, 'unit_price', this.value)">
-                    <input type="number" placeholder="Total" value="${item.total.toFixed(2)}" readonly>
-                    <button type="button" class="btn btn-secondary" onclick="removeItem(${idx})">✕</button>
+                           onchange="updateItem(${idx}, 'unit_price', parseFloat(this.value))">
+                    <input type="text" placeholder="Total" value="$${item.total.toFixed(2)}" readonly style="background:#f1f5f9;">
+                    <button type="button" class="remove-item" onclick="removeItem(${idx})">✕</button>
                 </div>
             `).join('');
         }
         
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
+            return String(str).replace(/[&<>]/g, function(m) {
                 if (m === '&') return '&amp;';
                 if (m === '<') return '&lt;';
                 if (m === '>') return '&gt;';
@@ -206,8 +670,10 @@
         document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-            const total = subtotal;
+            const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
+            const applyTaxValue = document.getElementById('applyTaxCheckbox')?.checked || false;
+            const taxAmountValue = applyTaxValue ? (subtotal * taxRate) / 100 : 0;
+            const total = subtotal + taxAmountValue;
             
             const invoiceData = {
                 ...originalInvoice,
@@ -217,21 +683,37 @@
                 due_date: document.getElementById('dueDate').value,
                 status: document.getElementById('status').value,
                 subtotal: subtotal,
+                tax_enabled: applyTaxValue ? 1 : 0,
+                tax_name: taxName,
+                tax_rate: applyTaxValue ? taxRate : 0,
+                tax_amount: taxAmountValue,
                 total: total,
                 notes: document.getElementById('notes').value,
                 terms: document.getElementById('terms').value,
                 items: items
             };
             
+            // Disable submit button
+            const submitBtn = document.querySelector('#invoiceForm button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Updating...';
+            submitBtn.disabled = true;
+            
             try {
                 await InvoiceAPI.update(originalInvoice.id, invoiceData);
-                alert('Invoice updated successfully!');
-                window.location.href = `view-invoice.html?id=${originalInvoice.id}`;
+                showAlert('Invoice updated successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = `view-invoice.html?id=${originalInvoice.id}`;
+                }, 1500);
             } catch (error) {
-                alert('Error updating invoice: ' + error.message);
+                console.error('Error updating invoice:', error);
+                showAlert('Error updating invoice: ' + error.message, 'error');
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         });
         
+        // Initialize
         loadInvoice();
     </script>
 </body>

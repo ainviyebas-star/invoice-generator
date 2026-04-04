@@ -38,6 +38,28 @@
             align-items: center;
         }
 
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #3b82f6;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .company-name-header {
+            font-size: 0.9rem;
+            color: #3b82f6;
+            font-weight: normal;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .company-name-header:not(:empty)::before {
+            content: "-";
+            margin-right: 0.5rem;
+            color: #cbd5e1;
+        }
 
         .nav-links {
             display: flex;
@@ -243,6 +265,31 @@
             transform: translateY(-1px);
         }
         
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
         @media (max-width: 768px) {
             .nav-links {
                 gap: 1rem;
@@ -292,7 +339,7 @@
             <button class="btn btn-primary" onclick="window.location.href='invoice-builder.html'">+ New Invoice</button>
         </div>
 
-        <div id="alert" class="alert" style="display: none;"></div> 
+        <div id="alert" class="alert" style="display: none;"></div>
 
         <!-- Stats Cards -->
         <div class="stats-grid">
@@ -308,6 +355,14 @@
                 <div class="stat-info">
                     <h3>Total Revenue</h3>
                     <div class="stat-value" id="totalRevenue">$0</div>
+                </div>
+            </div>
+            <!-- NEW: Total Tax Collected Card -->
+            <div class="stat-card">
+                <div class="stat-icon">🧾</div>
+                <div class="stat-info">
+                    <h3>Total Tax Collected</h3>
+                    <div class="stat-value" id="totalTax">$0</div>
                 </div>
             </div>
             <div class="stat-card">
@@ -346,6 +401,7 @@
             </div>
         </div>
     </main>
+    
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/header.js"></script>
@@ -353,56 +409,55 @@
         let revenueChart = null;
         let statusChart = null;
 
-// ============================================
-    // ADD THIS SHOWALERT FUNCTION HERE
-    // ============================================
-    function showAlert(message, type) {
-        const alert = document.getElementById('alert');
-        if (!alert) return;
-        
-        alert.textContent = message;
-        alert.className = `alert alert-${type}`;
-        alert.style.display = 'block';
-        
-        setTimeout(() => {
-            alert.style.display = 'none';
-        }, 3000);
-    }
-    // ============================================
+        // ============================================
+        // SHOW ALERT FUNCTION
+        // ============================================
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            if (!alert) return;
+            
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
 
         // Display company name from localStorage
- 
-async function displayCompanyName() {
-    try {
-        if (typeof getCompanyNameFromAPI !== 'undefined') {
-            const companyName = await getCompanyNameFromAPI();
-            const nameElement = document.getElementById('companyNameHeader');
-            if (nameElement && companyName) {
-                nameElement.textContent = `- ${companyName}`;
-            }
-            const welcomeElement = document.getElementById('companyNameDisplay');
-            if (welcomeElement && companyName) {
-                welcomeElement.textContent = companyName;
-            }
-        } else {
-            const settings = localStorage.getItem('companySettings');
-            if (settings) {
-                const company = JSON.parse(settings);
-                const nameElement = document.getElementById('companyNameHeader');
-                if (nameElement && company.name) {
-                    nameElement.textContent = `- ${company.name}`;
+        async function displayCompanyName() {
+            try {
+                // Try to get from API first
+                if (typeof getCompanyNameFromAPI !== 'undefined') {
+                    const companyName = await getCompanyNameFromAPI();
+                    const nameElement = document.getElementById('companyNameHeader');
+                    if (nameElement && companyName) {
+                        nameElement.textContent = companyName;
+                    }
+                    const welcomeElement = document.getElementById('companyNameDisplay');
+                    if (welcomeElement && companyName) {
+                        welcomeElement.textContent = companyName;
+                    }
+                } else {
+                    // Fallback to localStorage
+                    const settings = localStorage.getItem('companySettings');
+                    if (settings) {
+                        const company = JSON.parse(settings);
+                        const nameElement = document.getElementById('companyNameHeader');
+                        if (nameElement && company.name) {
+                            nameElement.textContent = company.name;
+                        }
+                        const welcomeElement = document.getElementById('companyNameDisplay');
+                        if (welcomeElement && company.name) {
+                            welcomeElement.textContent = company.name;
+                        }
+                    }
                 }
-                const welcomeElement = document.getElementById('companyNameDisplay');
-                if (welcomeElement && company.name) {
-                    welcomeElement.textContent = company.name;
-                }
+            } catch(e) {
+                console.error('Error displaying company name:', e);
             }
         }
-    } catch(e) {
-        console.error('Error:', e);
-    }
-}
-
 
         async function loadDashboard() {
             try {
@@ -420,31 +475,37 @@ async function displayCompanyName() {
                 const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
                 document.getElementById('totalRevenue').textContent = `$${totalRevenue.toFixed(2)}`;
                 
+                // NEW: Calculate total tax collected
+                const totalTax = invoices.reduce((sum, inv) => sum + (inv.tax_amount || 0), 0);
+                document.getElementById('totalTax').textContent = `$${totalTax.toFixed(2)}`;
+                
                 const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
                 document.getElementById('paidInvoices').textContent = paidInvoices;
                 
                 const overdueInvoices = invoices.filter(inv => inv.status === 'overdue').length;
                 document.getElementById('overdueInvoices').textContent = overdueInvoices;
                 
-                // Display recent invoices
+                // Display recent invoices with tax info
                 const invoiceList = document.getElementById('invoiceList');
                 if (invoices.length === 0) {
                     invoiceList.innerHTML = '<div class="loading">No invoices yet. Create your first invoice!</div>';
                     return;
                 }
                 
-                invoiceList.innerHTML = invoices.slice(0, 10).map(invoice => `
+                invoiceList.innerHTML = invoices.slice(0, 10).map(invoice => {
+                    const taxInfo = invoice.tax_enabled === 1 ? ` • ${invoice.tax_name || 'Tax'}: $${(invoice.tax_amount || 0).toFixed(2)}` : '';
+                    return `
                     <div class="invoice-item">
                         <div class="invoice-info">
                             <h4>${escapeHtml(invoice.invoice_number)}</h4>
-                            <p>${escapeHtml(invoice.customer_name || 'Unknown Customer')} • Due: ${invoice.due_date}</p>
+                            <p>${escapeHtml(invoice.customer_name || 'Unknown Customer')} • Due: ${invoice.due_date}${taxInfo}</p>
                         </div>
                         <div>
                             <span class="invoice-status status-${invoice.status}">${invoice.status}</span>
                             <p style="margin-top: 0.5rem; font-weight: 600;">$${(invoice.total || 0).toFixed(2)}</p>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
                 
                 // Load charts
                 loadCharts(invoices);
@@ -452,6 +513,7 @@ async function displayCompanyName() {
             } catch (error) {
                 console.error('Error loading dashboard:', error);
                 document.getElementById('invoiceList').innerHTML = '<div class="loading">Error loading invoices. Please check your API connection.</div>';
+                showAlert('Error loading dashboard: ' + error.message, 'error');
             }
         }
         
