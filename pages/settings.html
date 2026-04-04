@@ -446,18 +446,29 @@ async function saveTaxSettings(event) {
         tax_number: document.getElementById('taxNumber').value || ''
     };
     
+    console.log('Saving tax settings:', taxData);
+    
     try {
-        // Save to localStorage first
+        // Save to localStorage
         localStorage.setItem('taxSettings', JSON.stringify(taxData));
         
         // Save to API
         if (typeof CompanyAPI !== 'undefined') {
             const companies = await CompanyAPI.getAll();
+            console.log('Existing companies:', companies);
+            
             if (companies && companies.length > 0) {
+                // Update the first company (should be your company)
                 const company = companies[0];
-                const updatedCompany = { ...company, ...taxData };
+                const updatedCompany = { 
+                    ...company, 
+                    ...taxData 
+                };
+                
+                console.log('Updating company:', company.id, updatedCompany);
                 const result = await CompanyAPI.update(company.id, updatedCompany);
-                console.log('Tax settings saved to API:', result);
+                console.log('Update result:', result);
+                
                 showAlert('Tax settings saved successfully!', 'success');
             } else {
                 // Create new company record
@@ -466,12 +477,18 @@ async function saveTaxSettings(event) {
                     email: 'hello@yourbusiness.com',
                     ...taxData
                 };
+                console.log('Creating new company:', newCompany);
                 await CompanyAPI.create(newCompany);
                 showAlert('Tax settings saved successfully!', 'success');
             }
         } else {
             showAlert('Tax settings saved locally!', 'success');
         }
+        
+        // Reload the page to verify settings persisted
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
         
     } catch (error) {
         console.error('Error saving tax settings:', error);
