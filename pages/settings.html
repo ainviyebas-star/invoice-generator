@@ -288,9 +288,7 @@
             </form>
         </div>
 
-        <!-- ============================================ -->
-        <!-- TAX SETTINGS SECTION - ADD THIS SECTION -->
-        <!-- ============================================ -->
+        <!-- Tax Settings Section -->
         <div class="settings-card">
             <div class="settings-header">
                 <h3>💰 Tax Settings (GST/VAT)</h3>
@@ -336,7 +334,6 @@
                 </div>
             </form>
         </div>
-        <!-- ============================================ -->
 
         <!-- Invoice Defaults -->
         <div class="settings-card">
@@ -391,22 +388,18 @@
         
         // Function to update company name across all pages
         function updateAllPageHeaders(companyName) {
-            // Update current page header
             const headerElement = document.getElementById('companyNameHeader');
             if (headerElement) {
                 headerElement.textContent = companyName;
             }
             
-            // Update welcome message if on dashboard
             const welcomeElement = document.getElementById('companyNameDisplay');
             if (welcomeElement) {
                 welcomeElement.textContent = companyName;
             }
             
-            // Store for other pages
             localStorage.setItem('companyName', companyName);
             
-            // If header.js is loaded and has the function, use it
             if (typeof window.updateCompanyHeader === 'function') {
                 window.updateCompanyHeader();
             }
@@ -415,7 +408,7 @@
         }
         
         // ============================================
-        // TAX SETTINGS FUNCTIONS - ADD THIS SECTION
+        // TAX SETTINGS FUNCTIONS
         // ============================================
         function toggleTaxFields() {
             const taxEnabled = document.getElementById('taxEnabled').checked;
@@ -429,83 +422,123 @@
             customTaxNameGroup.style.display = taxNameSelect.value === 'Custom' ? 'block' : 'none';
         }
         
-async function saveTaxSettings(event) {
-    event.preventDefault();
-    
-    const taxEnabled = document.getElementById('taxEnabled').checked;
-    let taxName = document.getElementById('taxName').value;
-    
-    if (taxName === 'Custom') {
-        taxName = document.getElementById('customTaxName').value || 'Custom Tax';
-    }
-    
-    const taxData = {
-        tax_enabled: taxEnabled ? 1 : 0,
-        tax_name: taxName,
-        tax_rate: parseFloat(document.getElementById('taxRate').value) || 0,
-        tax_number: document.getElementById('taxNumber').value || ''
-    };
-    
-    console.log('Saving tax settings:', taxData);
-    
-    try {
-        // Save to localStorage
-        localStorage.setItem('taxSettings', JSON.stringify(taxData));
-        
-        // Save to API
-        if (typeof CompanyAPI !== 'undefined') {
-            const companies = await CompanyAPI.getAll();
-            console.log('Existing companies:', companies);
+        async function saveTaxSettings(event) {
+            event.preventDefault();
             
-            if (companies && companies.length > 0) {
-                // Update the first company (should be your company)
-                const company = companies[0];
-                const updatedCompany = { 
-                    ...company, 
-                    ...taxData 
-                };
-                
-                console.log('Updating company:', company.id, updatedCompany);
-                const result = await CompanyAPI.update(company.id, updatedCompany);
-                console.log('Update result:', result);
-                
-                showAlert('Tax settings saved successfully!', 'success');
-            } else {
-                // Create new company record
-                const newCompany = {
-                    name: 'Your Business Name',
-                    email: 'hello@yourbusiness.com',
-                    ...taxData
-                };
-                console.log('Creating new company:', newCompany);
-                await CompanyAPI.create(newCompany);
-                showAlert('Tax settings saved successfully!', 'success');
+            const taxEnabled = document.getElementById('taxEnabled').checked;
+            let taxName = document.getElementById('taxName').value;
+            
+            if (taxName === 'Custom') {
+                taxName = document.getElementById('customTaxName').value || 'Custom Tax';
             }
-        } else {
-            showAlert('Tax settings saved locally!', 'success');
+            
+            const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+            const taxNumber = document.getElementById('taxNumber').value || '';
+            
+            const taxData = {
+                tax_enabled: taxEnabled ? 1 : 0,
+                tax_name: taxName,
+                tax_rate: taxRate,
+                tax_number: taxNumber
+            };
+            
+            console.log('Saving tax settings:', taxData);
+            
+            try {
+                // First, try to get existing company from API
+                if (typeof CompanyAPI !== 'undefined') {
+                    const companies = await CompanyAPI.getAll();
+                    console.log('Existing companies:', companies);
+                    
+                    if (companies && companies.length > 0) {
+                        // Get the first company (should be id 1)
+                        const company = companies[0];
+                        console.log('Updating company ID:', company.id);
+                        
+                        // Update the company with tax data
+                        const updatedCompany = {
+                            ...company,
+                            ...taxData
+                        };
+                        
+                        const result = await CompanyAPI.update(company.id, updatedCompany);
+                        console.log('Update result:', result);
+                        
+                        if (result && result.success) {
+                            // Update localStorage
+                            localStorage.setItem('taxSettings', JSON.stringify(taxData));
+                            localStorage.setItem('companySettings', JSON.stringify(updatedCompany));
+                            
+                            showAlert('Tax settings saved successfully to database!', 'success');
+                            
+                            // Reload to show updated settings
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            throw new Error('Update failed');
+                        }
+                    } else {
+                        // No company exists, create one
+                        const newCompany = {
+                            name: document.getElementById('companyName').value || 'Your Business Name',
+                            email: document.getElementById('companyEmail').value || '',
+                            phone: document.getElementById('companyPhone').value || '',
+                            address: document.getElementById('companyAddress').value || '',
+                            tax_id: document.getElementById('companyTaxId').value || '',
+                            currency: document.getElementById('companyCurrency').value || 'USD',
+                            ...taxData
+                        };
+                        
+                        console.log('Creating new company:', newCompany);
+                        const result = await CompanyAPI.create(newCompany);
+                        console.log('Create result:', result);
+                        
+                        if (result && result.success) {
+                            localStorage.setItem('taxSettings', JSON.stringify(taxData));
+                            showAlert('Tax settings saved successfully!', 'success');
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            throw new Error('Create failed');
+                        }
+                    }
+                } else {
+                    // Fallback to localStorage only
+                    localStorage.setItem('taxSettings', JSON.stringify(taxData));
+                    showAlert('Tax settings saved locally! (API not available)', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Error saving tax settings:', error);
+                // Fallback to localStorage
+                localStorage.setItem('taxSettings', JSON.stringify(taxData));
+                showAlert('Error saving to database. Settings saved locally!', 'error');
+            }
         }
         
-        // Reload the page to verify settings persisted
-        setTimeout(() => {
-            location.reload();
-        }, 1500);
-        
-    } catch (error) {
-        console.error('Error saving tax settings:', error);
-        showAlert('Error saving tax settings: ' + error.message, 'error');
-    }
-}
-        
         function loadTaxSettings() {
-            const savedTax = localStorage.getItem('taxSettings');
-            if (savedTax) {
-                const tax = JSON.parse(savedTax);
-                document.getElementById('taxEnabled').checked = tax.tax_enabled === 1;
-                document.getElementById('taxName').value = tax.tax_name || 'GST';
-                document.getElementById('taxRate').value = tax.tax_rate || 0;
-                document.getElementById('taxNumber').value = tax.tax_number || '';
+            // First try to load from API via companyData
+            if (companyData && companyData.tax_enabled !== undefined) {
+                document.getElementById('taxEnabled').checked = companyData.tax_enabled === 1;
+                document.getElementById('taxName').value = companyData.tax_name || 'GST';
+                document.getElementById('taxRate').value = companyData.tax_rate || 0;
+                document.getElementById('taxNumber').value = companyData.tax_number || '';
                 toggleTaxFields();
                 showCustomTaxName();
+            } else {
+                // Fallback to localStorage
+                const savedTax = localStorage.getItem('taxSettings');
+                if (savedTax) {
+                    const tax = JSON.parse(savedTax);
+                    document.getElementById('taxEnabled').checked = tax.tax_enabled === 1;
+                    document.getElementById('taxName').value = tax.tax_name || 'GST';
+                    document.getElementById('taxRate').value = tax.tax_rate || 0;
+                    document.getElementById('taxNumber').value = tax.tax_number || '';
+                    toggleTaxFields();
+                    showCustomTaxName();
+                }
             }
         }
         // ============================================
@@ -534,17 +567,6 @@ async function saveTaxSettings(event) {
                         populateForm(companyData);
                         updatePreview();
                         updateAllPageHeaders(companyData.name);
-                        
-                        // Load tax settings from API
-                        if (companyData.tax_enabled !== undefined) {
-                            const taxData = {
-                                tax_enabled: companyData.tax_enabled,
-                                tax_name: companyData.tax_name || 'GST',
-                                tax_rate: companyData.tax_rate || 0,
-                                tax_number: companyData.tax_number || ''
-                            };
-                            localStorage.setItem('taxSettings', JSON.stringify(taxData));
-                        }
                         loadTaxSettings();
                         return;
                     }
@@ -576,7 +598,11 @@ async function saveTaxSettings(event) {
                 logo_url: '',
                 bank_name: '',
                 bank_account: '',
-                bank_routing: ''
+                bank_routing: '',
+                tax_enabled: 0,
+                tax_name: 'GST',
+                tax_rate: 0,
+                tax_number: ''
             };
             populateForm(companyData);
         }
@@ -632,18 +658,14 @@ async function saveTaxSettings(event) {
                 }
                 companyData = updatedData;
                 
-                // Save to localStorage for quick access
                 localStorage.setItem('companySettings', JSON.stringify(updatedData));
                 
                 showAlert('Company settings saved successfully!', 'success');
                 updatePreview();
-                
-                // Update company name in header on all pages
                 updateAllPageHeaders(updatedData.name);
                 
             } catch (error) {
                 console.error('Error saving to API:', error);
-                // Fallback to localStorage only
                 localStorage.setItem('companySettings', JSON.stringify(updatedData));
                 showAlert('Settings saved locally!', 'success');
                 updatePreview();
@@ -691,7 +713,6 @@ async function saveTaxSettings(event) {
                 previewContent.innerHTML = previewHtml;
             }
             
-            // Update logo preview
             const logoPreview = document.getElementById('logoPreview');
             if (logoPreview) {
                 if (logo) {
@@ -741,20 +762,17 @@ async function saveTaxSettings(event) {
         }
         if (taxForm) taxForm.addEventListener('submit', saveTaxSettings);
         
-        // Tax name change listener
         const taxNameSelect = document.getElementById('taxName');
         if (taxNameSelect) {
             taxNameSelect.addEventListener('change', showCustomTaxName);
         }
         
-        // Live preview on input changes
         const inputs = ['companyName', 'companyEmail', 'companyPhone', 'companyAddress', 'companyLogo', 'companyCurrency'];
         inputs.forEach(id => {
             const element = document.getElementById(id);
             if (element) element.addEventListener('input', updatePreview);
         });
         
-        // Load settings on page load
         loadCompanySettings();
     </script>
 </body>
