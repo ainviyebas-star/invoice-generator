@@ -445,28 +445,25 @@
             console.log('Saving tax settings:', taxData);
             
             try {
-                // First, try to get existing company from API
+                // Get current company from API
                 if (typeof CompanyAPI !== 'undefined') {
                     const companies = await CompanyAPI.getAll();
                     console.log('Existing companies:', companies);
                     
                     if (companies && companies.length > 0) {
-                        // Get the first company (should be id 1)
+                        // Update existing company
                         const company = companies[0];
                         console.log('Updating company ID:', company.id);
                         
-                        // Update the company with tax data
-                        const updatedCompany = {
-                            ...company,
-                            ...taxData
-                        };
-                        
-                        const result = await CompanyAPI.update(company.id, updatedCompany);
+                        const result = await CompanyAPI.update(company.id, taxData);
                         console.log('Update result:', result);
                         
                         if (result && result.success) {
                             // Update localStorage
                             localStorage.setItem('taxSettings', JSON.stringify(taxData));
+                            
+                            // Also update the full company settings
+                            const updatedCompany = { ...company, ...taxData };
                             localStorage.setItem('companySettings', JSON.stringify(updatedCompany));
                             
                             showAlert('Tax settings saved successfully to database!', 'success');
@@ -476,10 +473,10 @@
                                 location.reload();
                             }, 1500);
                         } else {
-                            throw new Error('Update failed');
+                            throw new Error('Update failed - no success response');
                         }
                     } else {
-                        // No company exists, create one
+                        // No company exists, create one first
                         const newCompany = {
                             name: document.getElementById('companyName').value || 'Your Business Name',
                             email: document.getElementById('companyEmail').value || '',
@@ -773,6 +770,7 @@
             if (element) element.addEventListener('input', updatePreview);
         });
         
+        // Load settings on page load
         loadCompanySettings();
     </script>
 </body>
