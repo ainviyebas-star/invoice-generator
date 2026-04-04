@@ -147,6 +147,18 @@
             color: #64748b;
         }
         
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .checkbox-label input {
+            width: auto;
+            cursor: pointer;
+        }
+        
         @media (max-width: 768px) {
             .form-row {
                 grid-template-columns: 1fr;
@@ -276,6 +288,56 @@
             </form>
         </div>
 
+        <!-- ============================================ -->
+        <!-- TAX SETTINGS SECTION - ADD THIS SECTION -->
+        <!-- ============================================ -->
+        <div class="settings-card">
+            <div class="settings-header">
+                <h3>💰 Tax Settings (GST/VAT)</h3>
+            </div>
+            <form id="taxForm">
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="taxEnabled" onchange="toggleTaxFields()">
+                        <span>Enable Tax (GST/VAT) on invoices</span>
+                    </label>
+                </div>
+                
+                <div id="taxFields" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tax Name</label>
+                            <select id="taxName">
+                                <option value="GST">GST (Goods & Services Tax)</option>
+                                <option value="VAT">VAT (Value Added Tax)</option>
+                                <option value="HST">HST (Harmonized Sales Tax)</option>
+                                <option value="Sales Tax">Sales Tax</option>
+                                <option value="Service Tax">Service Tax</option>
+                                <option value="Custom">Custom Tax</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tax Rate (%)</label>
+                            <input type="number" id="taxRate" step="0.1" min="0" max="100" placeholder="10" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tax Registration Number (Optional)</label>
+                        <input type="text" id="taxNumber" placeholder="GSTIN / VAT Number">
+                    </div>
+                    <div class="form-group" id="customTaxNameGroup" style="display: none;">
+                        <label>Custom Tax Name</label>
+                        <input type="text" id="customTaxName" placeholder="e.g., IGST, CGST, etc.">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary">Save Tax Settings</button>
+                </div>
+            </form>
+        </div>
+        <!-- ============================================ -->
+
         <!-- Invoice Defaults -->
         <div class="settings-card">
             <div class="settings-header">
@@ -352,6 +414,72 @@
             console.log('Company name updated across all pages:', companyName);
         }
         
+        // ============================================
+        // TAX SETTINGS FUNCTIONS - ADD THIS SECTION
+        // ============================================
+        function toggleTaxFields() {
+            const taxEnabled = document.getElementById('taxEnabled').checked;
+            const taxFields = document.getElementById('taxFields');
+            taxFields.style.display = taxEnabled ? 'block' : 'none';
+        }
+        
+        function showCustomTaxName() {
+            const taxNameSelect = document.getElementById('taxName');
+            const customTaxNameGroup = document.getElementById('customTaxNameGroup');
+            customTaxNameGroup.style.display = taxNameSelect.value === 'Custom' ? 'block' : 'none';
+        }
+        
+        async function saveTaxSettings(event) {
+            event.preventDefault();
+            
+            const taxEnabled = document.getElementById('taxEnabled').checked;
+            let taxName = document.getElementById('taxName').value;
+            
+            if (taxName === 'Custom') {
+                taxName = document.getElementById('customTaxName').value || 'Custom Tax';
+            }
+            
+            const taxData = {
+                tax_enabled: taxEnabled ? 1 : 0,
+                tax_name: taxName,
+                tax_rate: parseFloat(document.getElementById('taxRate').value) || 0,
+                tax_number: document.getElementById('taxNumber').value || ''
+            };
+            
+            try {
+                // Save to localStorage
+                localStorage.setItem('taxSettings', JSON.stringify(taxData));
+                
+                // Try to save to API if available
+                if (typeof CompanyAPI !== 'undefined') {
+                    const companies = await CompanyAPI.getAll();
+                    if (companies && companies.length > 0) {
+                        await CompanyAPI.update(companies[0].id, { ...companies[0], ...taxData });
+                    }
+                }
+                
+                showAlert('Tax settings saved successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error saving tax settings:', error);
+                showAlert('Tax settings saved locally!', 'success');
+            }
+        }
+        
+        function loadTaxSettings() {
+            const savedTax = localStorage.getItem('taxSettings');
+            if (savedTax) {
+                const tax = JSON.parse(savedTax);
+                document.getElementById('taxEnabled').checked = tax.tax_enabled === 1;
+                document.getElementById('taxName').value = tax.tax_name || 'GST';
+                document.getElementById('taxRate').value = tax.tax_rate || 0;
+                document.getElementById('taxNumber').value = tax.tax_number || '';
+                toggleTaxFields();
+                showCustomTaxName();
+            }
+        }
+        // ============================================
+        
         async function loadCompanySettings() {
             try {
                 // First check localStorage for saved settings
@@ -363,6 +491,7 @@
                         populateForm(companyData);
                         updatePreview();
                         updateAllPageHeaders(companyData.name);
+                        loadTaxSettings();
                         return;
                     }
                 }
@@ -375,6 +504,18 @@
                         populateForm(companyData);
                         updatePreview();
                         updateAllPageHeaders(companyData.name);
+                        
+                        // Load tax settings from API
+                        if (companyData.tax_enabled !== undefined) {
+                            const taxData = {
+                                tax_enabled: companyData.tax_enabled,
+                                tax_name: companyData.tax_name || 'GST',
+                                tax_rate: companyData.tax_rate || 0,
+                                tax_number: companyData.tax_number || ''
+                            };
+                            localStorage.setItem('taxSettings', JSON.stringify(taxData));
+                        }
+                        loadTaxSettings();
                         return;
                     }
                 }
@@ -382,11 +523,13 @@
                 // Use default values if nothing found
                 setDefaultValues();
                 updatePreview();
+                loadTaxSettings();
                 
             } catch (error) {
                 console.error('Error loading company settings:', error);
                 setDefaultValues();
                 updatePreview();
+                loadTaxSettings();
             }
         }
         
@@ -556,6 +699,7 @@
         const companyForm = document.getElementById('companyForm');
         const bankForm = document.getElementById('bankForm');
         const invoiceDefaultsForm = document.getElementById('invoiceDefaultsForm');
+        const taxForm = document.getElementById('taxForm');
         
         if (companyForm) companyForm.addEventListener('submit', saveCompanySettings);
         if (bankForm) bankForm.addEventListener('submit', saveCompanySettings);
@@ -564,6 +708,13 @@
                 e.preventDefault();
                 saveDefaults();
             });
+        }
+        if (taxForm) taxForm.addEventListener('submit', saveTaxSettings);
+        
+        // Tax name change listener
+        const taxNameSelect = document.getElementById('taxName');
+        if (taxNameSelect) {
+            taxNameSelect.addEventListener('change', showCustomTaxName);
         }
         
         // Live preview on input changes

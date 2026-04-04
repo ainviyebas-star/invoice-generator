@@ -87,11 +87,71 @@
             color: #1e293b;
         }
         
+        .tax-details {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+        
         .action-buttons {
             display: flex;
             gap: 1rem;
             justify-content: center;
             margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
         }
         
         @media print {
@@ -117,12 +177,12 @@
         <div class="nav-container">
             <h1 class="logo">📄 InvoicePro <span id="companyNameHeader" class="company-name-header"></span></h1>
             <div class="nav-links">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="invoice-builder.html">Create Invoice</a>
-    <a href="invoices.html">Invoices</a>
-    <a href="customers.html">Customers</a>
-    <a href="templates.html">Templates</a>
-    <a href="settings.html">⚙️ Settings</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="invoice-builder.html">Create Invoice</a>
+                <a href="invoices.html">Invoices</a>
+                <a href="customers.html">Customers</a>
+                <a href="templates.html">Templates</a>
+                <a href="settings.html">⚙️ Settings</a>
             </div>
         </div>
     </nav>
@@ -133,7 +193,7 @@
             <button class="btn btn-primary" onclick="window.print()">🖨️ Print Invoice</button>
         </div>
 
-        <div id="alert" class="alert" style="display: none;"></div>  <!-- ADD THIS LINE -->
+        <div id="alert" class="alert" style="display: none;"></div>
 
         <div id="invoiceContent" class="invoice-preview">
             <div class="loading">Loading invoice...</div>
@@ -145,6 +205,7 @@
             <button class="btn btn-secondary" onclick="markAsPaid()">✅ Mark as Paid</button>
         </div>
     </main>
+    
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/header.js"></script>
@@ -156,25 +217,22 @@
             return urlParams.get('id');
         }
         
-// ============================================
-    // ADD THIS SHOWALERT FUNCTION HERE
-    // ============================================
-    function showAlert(message, type) {
-        const alert = document.getElementById('alert');
-        if (!alert) return;
+        // ============================================
+        // SHOW ALERT FUNCTION
+        // ============================================
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            if (!alert) return;
+            
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
         
-        alert.textContent = message;
-        alert.className = `alert alert-${type}`;
-        alert.style.display = 'block';
-        
-        setTimeout(() => {
-            alert.style.display = 'none';
-        }, 3000);
-    }
-    // ============================================
-
-
-
         async function loadInvoice() {
             const invoiceId = getInvoiceId();
             if (!invoiceId) {
@@ -191,25 +249,40 @@
             }
         }
         
+        // ============================================
+        // UPDATED RENDER INVOICE FUNCTION WITH TAX DISPLAY
+        // ============================================
         function renderInvoice() {
             const invoice = currentInvoice;
             const items = invoice.items || [];
             
             const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
-            const tax = subtotal * (invoice.tax_rate || 0) / 100;
-            const total = subtotal + tax;
+            
+            // Get tax information from invoice
+            const taxEnabled = invoice.tax_enabled === 1;
+            const taxRate = invoice.tax_rate || 0;
+            const taxName = invoice.tax_name || 'GST';
+            const taxAmount = invoice.tax_amount || (taxEnabled ? (subtotal * taxRate) / 100 : 0);
+            const total = subtotal + taxAmount;
+            
+            // Get company info
+            const companyName = invoice.company_name || 
+                               (localStorage.getItem('companySettings') ? 
+                                JSON.parse(localStorage.getItem('companySettings')).name : 'Your Company');
             
             const html = `
                 <div class="invoice-header">
                     <div class="company-info">
-                        <h2>${escapeHtml(invoice.company_name || 'Your Company')}</h2>
+                        <h2>${escapeHtml(companyName)}</h2>
                         <p>${escapeHtml(invoice.company_email || '')}</p>
                         <p>${escapeHtml(invoice.company_phone || '')}</p>
                         <p>${escapeHtml(invoice.company_address || '')}</p>
+                        ${invoice.tax_number ? `<p><strong>${taxName} No:</strong> ${escapeHtml(invoice.tax_number)}</p>` : ''}
                     </div>
                     <div class="invoice-title">
                         <h3>INVOICE</h3>
                         <p><strong># ${escapeHtml(invoice.invoice_number)}</strong></p>
+                        ${invoice.po_number ? `<p><strong>PO #:</strong> ${escapeHtml(invoice.po_number)}</p>` : ''}
                     </div>
                 </div>
                 
@@ -219,6 +292,7 @@
                         <p>${escapeHtml(invoice.customer_name || '')}</p>
                         <p>${escapeHtml(invoice.customer_email || '')}</p>
                         <p>${escapeHtml(invoice.customer_address || '')}</p>
+                        ${invoice.customer_tax_id ? `<p><strong>Tax ID:</strong> ${escapeHtml(invoice.customer_tax_id)}</p>` : ''}
                     </div>
                     <div class="invoice-info">
                         <p><strong>Issue Date:</strong> ${invoice.issue_date}</p>
@@ -245,12 +319,15 @@
                 
                 <div class="totals">
                     <p>Subtotal: $${subtotal.toFixed(2)}</p>
-                    ${tax > 0 ? `<p>Tax (${invoice.tax_rate}%): $${tax.toFixed(2)}</p>` : ''}
+                    ${taxEnabled && taxAmount > 0 ? `
+                        <p>${escapeHtml(taxName)} (${taxRate}%): $${taxAmount.toFixed(2)}</p>
+                        <div class="tax-details">Tax included as per ${escapeHtml(taxName)} rules</div>
+                    ` : ''}
                     <p class="total-amount">Total: $${total.toFixed(2)}</p>
                 </div>
                 
-                ${invoice.notes ? `<div class="notes"><strong>Notes:</strong><br>${escapeHtml(invoice.notes)}</div>` : ''}
-                ${invoice.terms ? `<div class="notes"><strong>Terms & Conditions:</strong><br>${escapeHtml(invoice.terms)}</div>` : ''}
+                ${invoice.notes ? `<div class="notes" style="margin-top: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;"><strong>Notes:</strong><br>${escapeHtml(invoice.notes)}</div>` : ''}
+                ${invoice.terms ? `<div class="terms" style="margin-top: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;"><strong>Terms & Conditions:</strong><br>${escapeHtml(invoice.terms)}</div>` : ''}
             `;
             
             document.getElementById('invoiceContent').innerHTML = html;
@@ -258,7 +335,7 @@
         
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
+            return String(str).replace(/[&<>]/g, function(m) {
                 if (m === '&') return '&amp;';
                 if (m === '<') return '&lt;';
                 if (m === '>') return '&gt;';
@@ -283,14 +360,15 @@
                         updated_at: new Date().toISOString()
                     };
                     await InvoiceAPI.update(currentInvoice.id, updatedInvoice);
-                    alert('Invoice marked as paid!');
+                    showAlert('Invoice marked as paid successfully!', 'success');
                     loadInvoice(); // Reload to show updated status
                 } catch (error) {
-                    alert('Error updating invoice: ' + error.message);
+                    showAlert('Error updating invoice: ' + error.message, 'error');
                 }
             }
         }
         
+        // Load invoice on page load
         loadInvoice();
     </script>
 </body>

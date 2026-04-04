@@ -157,6 +157,46 @@
             font-size: 1rem;
         }
         
+        .tax-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+        
+        .tax-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .tax-controls label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .tax-controls input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+        
+        .remove-tax-btn {
+            background: #fee2e2;
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #dc2626;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+        
+        .remove-tax-btn:hover {
+            background: #fecaca;
+        }
+        
         .summary-row.total {
             font-size: 1.25rem;
             font-weight: 700;
@@ -201,7 +241,30 @@
             background: #cbd5e1;
         }
         
-
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
         
         @media (max-width: 768px) {
             .items-header, .item-row {
@@ -215,6 +278,11 @@
             
             .form-row {
                 grid-template-columns: 1fr;
+            }
+            
+            .tax-controls {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
         
@@ -252,7 +320,7 @@
         <div class="invoice-builder">
             <h2>Create New Invoice</h2>
 
-            <div id="alert" class="alert" style="display: none;"></div>  <!-- ADD THIS LINE -->            
+            <div id="alert" class="alert" style="display: none;"></div>
             
             <form id="invoiceForm">
                 <!-- Customer & Template Section -->
@@ -334,16 +402,25 @@
                     </div>
                 </div>
                 
-                <!-- Summary -->
+                <!-- Summary with Tax Controls -->
                 <div class="summary-card">
                     <div class="summary-row">
                         <span>Subtotal:</span>
                         <span id="subtotalDisplay">$0.00</span>
                     </div>
-                    <div class="summary-row">
-                        <span>Tax (0%):</span>
-                        <span id="taxDisplay">$0.00</span>
+                    
+                    <!-- Tax Row with Controls -->
+                    <div class="tax-row" id="taxRow" style="display: none;">
+                        <div class="tax-controls">
+                            <label>
+                                <input type="checkbox" id="applyTaxCheckbox" onchange="toggleTax()">
+                                <span id="taxLabel">Add Tax</span>
+                            </label>
+                            <button type="button" class="remove-tax-btn" id="removeTaxBtn" onclick="removeTax()" style="display: none;">Remove Tax</button>
+                        </div>
+                        <span id="taxAmountDisplay">$0.00</span>
                     </div>
+                    
                     <div class="summary-row total">
                         <span>Total:</span>
                         <span id="totalDisplay">$0.00</span>
@@ -362,28 +439,143 @@
             </form>
         </div>
     </main>
+    
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/header.js"></script>
     <script>
         let items = [];
         
- // ============================================
-    // ADD THIS SHOWALERT FUNCTION HERE
-    // ============================================
-    function showAlert(message, type) {
-        const alert = document.getElementById('alert');
-        if (!alert) return;
+        // Tax variables
+        let taxEnabled = false;
+        let taxRate = 0;
+        let taxName = 'GST';
+        let taxAmount = 0;
+        let applyTax = false;
         
-        alert.textContent = message;
-        alert.className = `alert alert-${type}`;
-        alert.style.display = 'block';
+        // ============================================
+        // SHOW ALERT FUNCTION
+        // ============================================
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            if (!alert) return;
+            
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
         
-        setTimeout(() => {
-            alert.style.display = 'none';
-        }, 3000);
-    }
-    // ============================================
+        // ============================================
+        // TAX FUNCTIONS - ADD THIS SECTION
+        // ============================================
+        async function loadTaxSettings() {
+            try {
+                // Try to get from localStorage first
+                const savedTax = localStorage.getItem('taxSettings');
+                if (savedTax) {
+                    const tax = JSON.parse(savedTax);
+                    taxEnabled = tax.tax_enabled === 1;
+                    taxRate = tax.tax_rate || 0;
+                    taxName = tax.tax_name || 'GST';
+                }
+                
+                // Try to get from API
+                if (typeof CompanyAPI !== 'undefined') {
+                    const companies = await CompanyAPI.getAll();
+                    if (companies && companies.length > 0) {
+                        if (companies[0].tax_enabled !== undefined) {
+                            taxEnabled = companies[0].tax_enabled === 1;
+                            taxRate = companies[0].tax_rate || 0;
+                            taxName = companies[0].tax_name || 'GST';
+                            // Update localStorage
+                            localStorage.setItem('taxSettings', JSON.stringify({
+                                tax_enabled: taxEnabled ? 1 : 0,
+                                tax_rate: taxRate,
+                                tax_name: taxName
+                            }));
+                        }
+                    }
+                }
+                
+                // Update UI
+                const taxRow = document.getElementById('taxRow');
+                const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+                const taxLabel = document.getElementById('taxLabel');
+                
+                if (taxRow) {
+                    taxRow.style.display = taxEnabled ? 'flex' : 'none';
+                }
+                
+                if (applyTaxCheckbox) {
+                    applyTaxCheckbox.checked = false;
+                }
+                
+                if (taxLabel && taxEnabled) {
+                    taxLabel.textContent = `${taxName} (${taxRate}%)`;
+                } else if (taxLabel) {
+                    taxLabel.textContent = 'Add Tax';
+                }
+                
+                updateSummary();
+                
+            } catch (error) {
+                console.error('Error loading tax settings:', error);
+            }
+        }
+        
+        // Toggle tax on/off
+        function toggleTax() {
+            const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+            const removeTaxBtn = document.getElementById('removeTaxBtn');
+            
+            applyTax = applyTaxCheckbox.checked;
+            
+            if (applyTax) {
+                calculateTax();
+                if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
+                showAlert(`${taxName} (${taxRate}%) applied to invoice`, 'info');
+            } else {
+                taxAmount = 0;
+                updateSummary();
+                if (removeTaxBtn) removeTaxBtn.style.display = 'none';
+            }
+        }
+        
+        // Calculate tax amount
+        function calculateTax() {
+            const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
+            taxAmount = (subtotal * taxRate) / 100;
+            updateSummary();
+        }
+        
+        // Remove tax completely
+        function removeTax() {
+            const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+            const removeTaxBtn = document.getElementById('removeTaxBtn');
+            
+            if (applyTaxCheckbox) applyTaxCheckbox.checked = false;
+            applyTax = false;
+            taxAmount = 0;
+            updateSummary();
+            if (removeTaxBtn) removeTaxBtn.style.display = 'none';
+            
+            showAlert(`${taxName} removed from invoice`, 'info');
+        }
+        
+        // Update summary with tax
+        function updateSummary() {
+            const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
+            const total = subtotal + taxAmount;
+            
+            document.getElementById('subtotalDisplay').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('taxAmountDisplay').textContent = `$${taxAmount.toFixed(2)}`;
+            document.getElementById('totalDisplay').textContent = `$${total.toFixed(2)}`;
+        }
+        // ============================================
 
         // Display company name in header
         function displayCompanyName() {
@@ -393,7 +585,7 @@
                     const company = JSON.parse(settings);
                     const nameElement = document.getElementById('companyNameHeader');
                     if (nameElement && company.name) {
-                        nameElement.textContent = `- ${company.name}`;
+                        nameElement.textContent = company.name;
                     }
                 } catch(e) {
                     console.error('Error parsing company settings:', e);
@@ -410,6 +602,7 @@
                 total: 0 
             });
             renderItems();
+            if (applyTax) calculateTax();
             updateSummary();
         }
         
@@ -417,6 +610,7 @@
         function removeItem(index) {
             items.splice(index, 1);
             renderItems();
+            if (applyTax) calculateTax();
             updateSummary();
         }
         
@@ -427,6 +621,7 @@
                 items[index].total = (items[index].quantity || 0) * (items[index].unit_price || 0);
             }
             renderItems();
+            if (applyTax) calculateTax();
             updateSummary();
         }
         
@@ -463,17 +658,6 @@
                     <button type="button" class="remove-item" onclick="removeItem(${idx})">✕</button>
                 </div>
             `).join('');
-        }
-        
-        // Update summary totals
-        function updateSummary() {
-            const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
-            const tax = 0;
-            const total = subtotal + tax;
-            
-            document.getElementById('subtotalDisplay').textContent = `$${subtotal.toFixed(2)}`;
-            document.getElementById('taxDisplay').textContent = `$${tax.toFixed(2)}`;
-            document.getElementById('totalDisplay').textContent = `$${total.toFixed(2)}`;
         }
         
         // Escape HTML
@@ -553,15 +737,14 @@
             
             // Validate API
             if (typeof InvoiceAPI === 'undefined') {
-                alert('API not loaded. Please refresh the page.');
-                console.error('InvoiceAPI is not defined');
+                showAlert('API not loaded. Please refresh the page.', 'error');
                 return;
             }
             
             // Validate customer
             const customerId = document.getElementById('customerSelect').value;
             if (!customerId) {
-                alert('Please select a customer');
+                showAlert('Please select a customer', 'error');
                 document.getElementById('customerSelect').focus();
                 return;
             }
@@ -574,7 +757,7 @@
             );
             
             if (validItems.length === 0) {
-                alert('Please add at least one valid item with description, quantity, and price');
+                showAlert('Please add at least one valid item with description, quantity, and price', 'error');
                 return;
             }
             
@@ -583,13 +766,15 @@
             const dueDate = document.getElementById('dueDate').value;
             
             if (!issueDate || !dueDate) {
-                alert('Please select issue date and due date');
+                showAlert('Please select issue date and due date', 'error');
                 return;
             }
             
-            // Calculate totals
+            // Calculate totals with tax
             const subtotal = validItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
-            const total = subtotal;
+            const applyTaxValue = document.getElementById('applyTaxCheckbox')?.checked || false;
+            const taxAmountValue = applyTaxValue ? (subtotal * taxRate) / 100 : 0;
+            const total = subtotal + taxAmountValue;
             
             // Prepare invoice data
             const invoiceData = {
@@ -602,8 +787,10 @@
                 due_date: dueDate,
                 status: 'draft',
                 subtotal: subtotal,
-                tax_rate: 0,
-                tax_amount: 0,
+                tax_enabled: applyTaxValue ? 1 : 0,
+                tax_name: taxName,
+                tax_rate: applyTaxValue ? taxRate : 0,
+                tax_amount: taxAmountValue,
                 total: total,
                 notes: document.getElementById('notes').value || '',
                 terms: document.getElementById('terms').value || '',
@@ -626,11 +813,13 @@
                 const result = await InvoiceAPI.create(invoiceData);
                 console.log('Result:', result);
                 
-                alert('✅ Invoice created successfully!');
-                window.location.href = 'invoices.html';
+                showAlert('✅ Invoice created successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = 'invoices.html';
+                }, 1500);
             } catch (error) {
                 console.error('Error creating invoice:', error);
-                alert('❌ Error creating invoice: ' + error.message);
+                showAlert('❌ Error creating invoice: ' + error.message, 'error');
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
             }
@@ -651,6 +840,7 @@
             displayCompanyName();
             await loadCustomers();
             await loadTemplates();
+            await loadTaxSettings();
             addItem(); // Add one empty item row
         }
         
