@@ -552,30 +552,34 @@
             }
         }
         
-        function toggleTax() {
-            const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
-            const removeTaxBtn = document.getElementById('removeTaxBtn');
-            const taxSummaryRow = document.getElementById('taxSummaryRow');
-            const taxNameDisplay = document.getElementById('taxNameDisplay');
-            
-            applyTax = applyTaxCheckbox.checked;
-            
-            // Save the state
-            saveTaxState();
-            
-            if (applyTax) {
-                calculateTax();
-                if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
-                if (taxSummaryRow) taxSummaryRow.style.display = 'flex';
-                if (taxNameDisplay) taxNameDisplay.textContent = `${taxName} (${taxRate}%)`;
-                showAlert(`${taxName} (${taxRate}%) applied to invoice`, 'info');
-            } else {
-                taxAmount = 0;
-                updateSummary();
-                if (removeTaxBtn) removeTaxBtn.style.display = 'none';
-                if (taxSummaryRow) taxSummaryRow.style.display = 'none';
-            }
-        }
+ function toggleTax() {
+    const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+    const removeTaxBtn = document.getElementById('removeTaxBtn');
+    const taxSummaryRow = document.getElementById('taxSummaryRow');
+    const taxNameDisplay = document.getElementById('taxNameDisplay');
+    
+    applyTax = applyTaxCheckbox.checked;
+    
+    console.log('Toggle tax called. Checked:', applyTax);
+    console.log('Tax rate:', taxRate);
+    console.log('Tax name:', taxName);
+    
+    // Save the state
+    saveTaxState();
+    
+    if (applyTax) {
+        calculateTax();
+        if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
+        if (taxSummaryRow) taxSummaryRow.style.display = 'flex';
+        if (taxNameDisplay) taxNameDisplay.textContent = `${taxName} (${taxRate}%)`;
+        showAlert(`${taxName} (${taxRate}%) applied to invoice`, 'info');
+    } else {
+        taxAmount = 0;
+        updateSummary();
+        if (removeTaxBtn) removeTaxBtn.style.display = 'none';
+        if (taxSummaryRow) taxSummaryRow.style.display = 'none';
+    }
+}
         
         function calculateTax() {
             const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
@@ -765,103 +769,115 @@
             }
         }
         
-        // Handle form submission
-        document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Validate API
-            if (typeof InvoiceAPI === 'undefined') {
-                showAlert('API not loaded. Please refresh the page.', 'error');
-                return;
-            }
-            
-            // Validate customer
-            const customerId = document.getElementById('customerSelect').value;
-            if (!customerId) {
-                showAlert('Please select a customer', 'error');
-                document.getElementById('customerSelect').focus();
-                return;
-            }
-            
-            // Validate items
-            const validItems = items.filter(item => 
-                item.description && item.description.trim() !== '' && 
-                item.quantity > 0 && 
-                item.unit_price > 0
-            );
-            
-            if (validItems.length === 0) {
-                showAlert('Please add at least one valid item with description, quantity, and price', 'error');
-                return;
-            }
-            
-            // Validate dates
-            const issueDate = document.getElementById('issueDate').value;
-            const dueDate = document.getElementById('dueDate').value;
-            
-            if (!issueDate || !dueDate) {
-                showAlert('Please select issue date and due date', 'error');
-                return;
-            }
-            
-            // Calculate totals with tax
-            const subtotal = validItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
-            const applyTaxValue = document.getElementById('applyTaxCheckbox')?.checked || false;
-            const taxAmountValue = applyTaxValue ? (subtotal * taxRate) / 100 : 0;
-            const total = subtotal + taxAmountValue;
-            
-            // Prepare invoice data
-            const invoiceData = {
-                company_id: 1,
-                customer_id: parseInt(customerId),
-                template_id: parseInt(document.getElementById('templateSelect').value),
-                invoice_number: `INV-${Date.now()}`,
-                po_number: document.getElementById('poNumber').value || '',
-                issue_date: issueDate,
-                due_date: dueDate,
-                status: 'draft',
-                subtotal: subtotal,
-                tax_enabled: applyTaxValue ? 1 : 0,
-                tax_name: taxName,
-                tax_rate: applyTaxValue ? taxRate : 0,
-                tax_amount: taxAmountValue,
-                total: total,
-                notes: document.getElementById('notes').value || '',
-                terms: document.getElementById('terms').value || '',
-                items: validItems.map(item => ({
-                    description: item.description,
-                    quantity: item.quantity,
-                    unit_price: item.unit_price,
-                    total: item.quantity * item.unit_price
-                }))
-            };
-            
-            // Disable submit button
-            const submitBtn = document.querySelector('#invoiceForm button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Creating...';
-            submitBtn.disabled = true;
-            
-            try {
-                console.log('Creating invoice:', invoiceData);
-                const result = await InvoiceAPI.create(invoiceData);
-                console.log('Result:', result);
-                
-                // Clear saved tax state after successful creation
-                localStorage.removeItem('invoiceTaxState');
-                
-                showAlert('✅ Invoice created successfully!', 'success');
-                setTimeout(() => {
-                    window.location.href = 'invoices.html';
-                }, 1500);
-            } catch (error) {
-                console.error('Error creating invoice:', error);
-                showAlert('❌ Error creating invoice: ' + error.message, 'error');
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        });
+ // Handle form submission - FIXED VERSION
+document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Validate API
+    if (typeof InvoiceAPI === 'undefined') {
+        showAlert('API not loaded. Please refresh the page.', 'error');
+        return;
+    }
+    
+    // Validate customer
+    const customerId = document.getElementById('customerSelect').value;
+    if (!customerId) {
+        showAlert('Please select a customer', 'error');
+        document.getElementById('customerSelect').focus();
+        return;
+    }
+    
+    // Validate items
+    const validItems = items.filter(item => 
+        item.description && item.description.trim() !== '' && 
+        item.quantity > 0 && 
+        item.unit_price > 0
+    );
+    
+    if (validItems.length === 0) {
+        showAlert('Please add at least one valid item with description, quantity, and price', 'error');
+        return;
+    }
+    
+    // Validate dates
+    const issueDate = document.getElementById('issueDate').value;
+    const dueDate = document.getElementById('dueDate').value;
+    
+    if (!issueDate || !dueDate) {
+        showAlert('Please select issue date and due date', 'error');
+        return;
+    }
+    
+    // Calculate subtotal
+    const subtotal = validItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+    
+    // IMPORTANT: Get the checkbox state directly from the DOM
+    const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+    const applyTaxValue = applyTaxCheckbox ? applyTaxCheckbox.checked : false;
+    
+    console.log('Tax checkbox checked:', applyTaxValue);
+    console.log('Tax rate:', taxRate);
+    console.log('Tax name:', taxName);
+    
+    // Calculate tax amount
+    const taxAmountValue = applyTaxValue ? (subtotal * taxRate) / 100 : 0;
+    const total = subtotal + taxAmountValue;
+    
+    console.log('Subtotal:', subtotal);
+    console.log('Tax amount:', taxAmountValue);
+    console.log('Total:', total);
+    
+    // Prepare invoice data
+    const invoiceData = {
+        company_id: 1,
+        customer_id: parseInt(customerId),
+        template_id: parseInt(document.getElementById('templateSelect').value),
+        invoice_number: `INV-${Date.now()}`,
+        po_number: document.getElementById('poNumber').value || '',
+        issue_date: issueDate,
+        due_date: dueDate,
+        status: 'draft',
+        subtotal: subtotal,
+        tax_enabled: applyTaxValue ? 1 : 0,
+        tax_name: taxName,
+        tax_rate: applyTaxValue ? taxRate : 0,
+        tax_amount: taxAmountValue,
+        total: total,
+        notes: document.getElementById('notes').value || '',
+        terms: document.getElementById('terms').value || '',
+        items: validItems.map(item => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.quantity * item.unit_price
+        }))
+    };
+    
+    // Disable submit button
+    const submitBtn = document.querySelector('#invoiceForm button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Creating...';
+    submitBtn.disabled = true;
+    
+    try {
+        console.log('Creating invoice with data:', invoiceData);
+        const result = await InvoiceAPI.create(invoiceData);
+        console.log('Result:', result);
         
+        // Clear saved tax state after successful creation (optional)
+        localStorage.removeItem('invoiceTaxState');
+        
+        showAlert('✅ Invoice created successfully!', 'success');
+        setTimeout(() => {
+            window.location.href = 'invoices.html';
+        }, 1500);
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        showAlert('❌ Error creating invoice: ' + error.message, 'error');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+});        
         // Set default dates
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
