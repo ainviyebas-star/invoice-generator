@@ -157,6 +157,7 @@
             font-size: 1rem;
         }
         
+        /* Tax Summary Row - shows the tax amount when applied */
         .tax-summary-row {
             display: flex;
             justify-content: space-between;
@@ -167,6 +168,7 @@
             color: #475569;
         }
         
+        /* Tax Controls Row - contains the checkbox */
         .tax-controls-row {
             display: flex;
             justify-content: space-between;
@@ -298,20 +300,6 @@
                 align-items: flex-start;
             }
         }
-        
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #64748b;
-        }
-        
-        .error-message {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 0.75rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
     </style>
 </head>
 <body>
@@ -433,8 +421,8 @@
                         <span id="totalDisplay">$0.00</span>
                     </div>
                     
-                    <!-- Tax Controls Row -->
-                    <div class="tax-controls-row" id="taxRow" style="display: none;">
+                    <!-- Tax Controls Row - Contains the checkbox (ALWAYS VISIBLE if tax enabled in settings) -->
+                    <div class="tax-controls-row" id="taxRow">
                         <div class="tax-controls">
                             <label>
                                 <input type="checkbox" id="applyTaxCheckbox" onchange="toggleTax()">
@@ -492,48 +480,49 @@
         // ============================================
         async function loadTaxSettings() {
             try {
-                // Try to get from localStorage first
-                const savedTax = localStorage.getItem('taxSettings');
-                if (savedTax) {
-                    const tax = JSON.parse(savedTax);
-                    taxEnabled = tax.tax_enabled === 1;
-                    taxRate = tax.tax_rate || 0;
-                    taxName = tax.tax_name || 'GST';
-                }
-                
-                // Try to get from API
+                // Try to get from API first
                 if (typeof CompanyAPI !== 'undefined') {
                     const companies = await CompanyAPI.getAll();
                     if (companies && companies.length > 0) {
-                        if (companies[0].tax_enabled !== undefined) {
-                            taxEnabled = companies[0].tax_enabled === 1;
-                            taxRate = companies[0].tax_rate || 0;
-                            taxName = companies[0].tax_name || 'GST';
-                            // Update localStorage
-                            localStorage.setItem('taxSettings', JSON.stringify({
-                                tax_enabled: taxEnabled ? 1 : 0,
-                                tax_rate: taxRate,
-                                tax_name: taxName
-                            }));
-                        }
+                        const company = companies[0];
+                        taxEnabled = company.tax_enabled === 1;
+                        taxRate = company.tax_rate || 0;
+                        taxName = company.tax_name || 'GST';
+                        
+                        // Update localStorage
+                        localStorage.setItem('taxSettings', JSON.stringify({
+                            tax_enabled: taxEnabled ? 1 : 0,
+                            tax_rate: taxRate,
+                            tax_name: taxName
+                        }));
+                    }
+                } else {
+                    // Fallback to localStorage
+                    const savedTax = localStorage.getItem('taxSettings');
+                    if (savedTax) {
+                        const tax = JSON.parse(savedTax);
+                        taxEnabled = tax.tax_enabled === 1;
+                        taxRate = tax.tax_rate || 0;
+                        taxName = tax.tax_name || 'GST';
                     }
                 }
                 
-                // Update UI
-                const taxRow = document.getElementById('taxRow');
+                // Update the tax label
                 const taxLabel = document.getElementById('taxLabel');
-                
-                if (taxRow) {
-                    taxRow.style.display = taxEnabled ? 'flex' : 'none';
-                }
-                
-                if (taxLabel && taxEnabled) {
+                if (taxLabel && taxEnabled && taxRate > 0) {
                     taxLabel.textContent = `${taxName} (${taxRate}%)`;
                 } else if (taxLabel) {
                     taxLabel.textContent = 'Add Tax';
                 }
                 
-                updateSummary();
+                // Show/hide tax row based on settings
+                const taxRow = document.getElementById('taxRow');
+                if (taxRow) {
+                    taxRow.style.display = taxEnabled && taxRate > 0 ? 'flex' : 'none';
+                    console.log('Tax row displayed:', taxEnabled && taxRate > 0);
+                }
+                
+                console.log('Tax settings loaded:', { taxEnabled, taxRate, taxName });
                 
             } catch (error) {
                 console.error('Error loading tax settings:', error);
