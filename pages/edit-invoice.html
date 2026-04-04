@@ -579,62 +579,99 @@
         }
         // ============================================
         
-        async function loadInvoice() {
-            const invoiceId = getInvoiceId();
-            if (!invoiceId) {
-                showAlert('Invalid invoice ID', 'error');
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1500);
-                return;
-            }
-            
-            try {
-                originalInvoice = await InvoiceAPI.get(invoiceId);
-                items = originalInvoice.items || [];
+async function loadInvoice() {
+    const invoiceId = getInvoiceId();
+    if (!invoiceId) {
+        showAlert('Invalid invoice ID', 'error');
+        setTimeout(() => {
+            window.location.href = 'dashboard.html';
+        }, 1500);
+        return;
+    }
+    
+    try {
+        originalInvoice = await InvoiceAPI.get(invoiceId);
+        items = originalInvoice.items || [];
+        
+        // Populate form fields
+        document.getElementById('invoiceNumber').value = originalInvoice.invoice_number;
+        document.getElementById('issueDate').value = originalInvoice.issue_date;
+        document.getElementById('dueDate').value = originalInvoice.due_date;
+        document.getElementById('status').value = originalInvoice.status;
+        document.getElementById('notes').value = originalInvoice.notes || '';
+        document.getElementById('terms').value = originalInvoice.terms || '';
+        
+        // Force reload tax settings from API
+        await forceReloadTaxSettings();
+        
+        // Set tax checkbox and summary based on invoice
+        const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+        const taxSummaryRow = document.getElementById('taxSummaryRow');
+        const taxNameDisplay = document.getElementById('taxNameDisplay');
+        
+        if (originalInvoice.tax_enabled === 1) {
+            applyTaxCheckbox.checked = true;
+            applyTax = true;
+            taxAmount = originalInvoice.tax_amount || 0;
+            const removeTaxBtn = document.getElementById('removeTaxBtn');
+            if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
+            if (taxSummaryRow) taxSummaryRow.style.display = 'flex';
+            if (taxNameDisplay) taxNameDisplay.textContent = `${taxName} (${taxRate}%)`;
+        } else {
+            applyTaxCheckbox.checked = false;
+            applyTax = false;
+            taxAmount = 0;
+            if (taxSummaryRow) taxSummaryRow.style.display = 'none';
+        }
+        
+        await loadCustomers();
+        document.getElementById('customerSelect').value = originalInvoice.customer_id;
+        
+        renderItems();
+        updateSummary();
+        
+    } catch (error) {
+        console.error('Error loading invoice:', error);
+        showAlert('Error loading invoice: ' + error.message, 'error');
+    }
+}
+
+// Add forceReloadTaxSettings function to edit-invoice.html as well
+async function forceReloadTaxSettings() {
+    try {
+        console.log('Force reloading tax settings from API...');
+        
+        if (typeof CompanyAPI !== 'undefined') {
+            const companies = await CompanyAPI.getAll();
+            if (companies && companies.length > 0) {
+                const company = companies[0];
+                taxEnabled = company.tax_enabled === 1;
+                taxRate = company.tax_rate || 0;
+                taxName = company.tax_name || 'GST';
                 
-                // Populate form fields
-                document.getElementById('invoiceNumber').value = originalInvoice.invoice_number;
-                document.getElementById('issueDate').value = originalInvoice.issue_date;
-                document.getElementById('dueDate').value = originalInvoice.due_date;
-                document.getElementById('status').value = originalInvoice.status;
-                document.getElementById('notes').value = originalInvoice.notes || '';
-                document.getElementById('terms').value = originalInvoice.terms || '';
+                const freshTaxData = {
+                    tax_enabled: taxEnabled ? 1 : 0,
+                    tax_rate: taxRate,
+                    tax_name: taxName,
+                    tax_number: company.tax_number || ''
+                };
+                localStorage.setItem('taxSettings', JSON.stringify(freshTaxData));
                 
-                // Load tax settings
-                await loadTaxSettings();
-                
-                // Set tax checkbox and summary based on invoice
-                const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
-                const taxSummaryRow = document.getElementById('taxSummaryRow');
-                const taxNameDisplay = document.getElementById('taxNameDisplay');
-                
-                if (originalInvoice.tax_enabled === 1) {
-                    applyTaxCheckbox.checked = true;
-                    applyTax = true;
-                    taxAmount = originalInvoice.tax_amount || 0;
-                    const removeTaxBtn = document.getElementById('removeTaxBtn');
-                    if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
-                    if (taxSummaryRow) taxSummaryRow.style.display = 'flex';
-                    if (taxNameDisplay) taxNameDisplay.textContent = `${taxName} (${taxRate}%)`;
-                } else {
-                    applyTaxCheckbox.checked = false;
-                    applyTax = false;
-                    taxAmount = 0;
-                    if (taxSummaryRow) taxSummaryRow.style.display = 'none';
-                }
-                
-                await loadCustomers();
-                document.getElementById('customerSelect').value = originalInvoice.customer_id;
-                
-                renderItems();
-                updateSummary();
-                
-            } catch (error) {
-                console.error('Error loading invoice:', error);
-                showAlert('Error loading invoice: ' + error.message, 'error');
+                console.log('Fresh tax settings loaded:', { taxEnabled, taxRate, taxName });
             }
         }
+        
+        const taxLabel = document.getElementById('taxLabel');
+        if (taxLabel && taxEnabled && taxRate > 0) {
+            taxLabel.textContent = `${taxName} (${taxRate}%)`;
+        } else if (taxLabel) {
+            taxLabel.textContent = 'Add Tax';
+        }
+        
+    } catch (error) {
+        console.error('Error force reloading tax settings:', error);
+    }
+}
         
         async function loadCustomers() {
             try {

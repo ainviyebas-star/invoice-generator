@@ -552,6 +552,66 @@
             }
         }
         
+// Force reload tax settings from API
+async function forceReloadTaxSettings() {
+    try {
+        console.log('Force reloading tax settings from API...');
+        
+        // Clear cached settings to force fresh load
+        const cachedSettings = localStorage.getItem('taxSettings');
+        
+        // Fetch fresh from API
+        if (typeof CompanyAPI !== 'undefined') {
+            const companies = await CompanyAPI.getAll();
+            if (companies && companies.length > 0) {
+                const company = companies[0];
+                taxEnabled = company.tax_enabled === 1;
+                taxRate = company.tax_rate || 0;
+                taxName = company.tax_name || 'GST';
+                
+                // Update localStorage with fresh data
+                const freshTaxData = {
+                    tax_enabled: taxEnabled ? 1 : 0,
+                    tax_rate: taxRate,
+                    tax_name: taxName,
+                    tax_number: company.tax_number || ''
+                };
+                localStorage.setItem('taxSettings', JSON.stringify(freshTaxData));
+                
+                console.log('Fresh tax settings loaded:', { taxEnabled, taxRate, taxName });
+            } else {
+                // No company found, use localStorage as fallback
+                loadTaxSettingsFromLocal();
+            }
+        } else {
+            loadTaxSettingsFromLocal();
+        }
+        
+        // Update UI
+        const taxLabel = document.getElementById('taxLabel');
+        if (taxLabel && taxEnabled && taxRate > 0) {
+            taxLabel.textContent = `${taxName} (${taxRate}%)`;
+        } else if (taxLabel) {
+            taxLabel.textContent = 'Add Tax';
+        }
+        
+    } catch (error) {
+        console.error('Error force reloading tax settings:', error);
+        loadTaxSettingsFromLocal();
+    }
+}
+
+function loadTaxSettingsFromLocal() {
+    const savedTax = localStorage.getItem('taxSettings');
+    if (savedTax) {
+        const tax = JSON.parse(savedTax);
+        taxEnabled = tax.tax_enabled === 1;
+        taxRate = tax.tax_rate || 0;
+        taxName = tax.tax_name || 'GST';
+        console.log('Tax settings loaded from localStorage:', { taxEnabled, taxRate, taxName });
+    }
+}
+        
  function toggleTax() {
     const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
     const removeTaxBtn = document.getElementById('removeTaxBtn');
@@ -889,14 +949,15 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
         document.getElementById('dueDate').value = nextMonthStr;
         
         // Initialize page
-        async function init() {
-            displayCompanyName();
-            await loadCustomers();
-            await loadTemplates();
-            await loadTaxSettings();
-            addItem(); // Add one empty item row
-            restoreTaxState(); // Restore saved tax checkbox state AFTER tax settings are loaded
-        }
+// Initialize page
+async function init() {
+    displayCompanyName();
+    await loadCustomers();
+    await loadTemplates();
+    await forceReloadTaxSettings(); // Use force reload instead of regular load
+    addItem(); // Add one empty item row
+    restoreTaxState(); // Restore saved tax checkbox state
+}
         
         init();
     </script>

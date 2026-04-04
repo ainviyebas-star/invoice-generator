@@ -429,42 +429,55 @@
             customTaxNameGroup.style.display = taxNameSelect.value === 'Custom' ? 'block' : 'none';
         }
         
-        async function saveTaxSettings(event) {
-            event.preventDefault();
-            
-            const taxEnabled = document.getElementById('taxEnabled').checked;
-            let taxName = document.getElementById('taxName').value;
-            
-            if (taxName === 'Custom') {
-                taxName = document.getElementById('customTaxName').value || 'Custom Tax';
-            }
-            
-            const taxData = {
-                tax_enabled: taxEnabled ? 1 : 0,
-                tax_name: taxName,
-                tax_rate: parseFloat(document.getElementById('taxRate').value) || 0,
-                tax_number: document.getElementById('taxNumber').value || ''
-            };
-            
-            try {
-                // Save to localStorage
-                localStorage.setItem('taxSettings', JSON.stringify(taxData));
-                
-                // Try to save to API if available
-                if (typeof CompanyAPI !== 'undefined') {
-                    const companies = await CompanyAPI.getAll();
-                    if (companies && companies.length > 0) {
-                        await CompanyAPI.update(companies[0].id, { ...companies[0], ...taxData });
-                    }
-                }
-                
+async function saveTaxSettings(event) {
+    event.preventDefault();
+    
+    const taxEnabled = document.getElementById('taxEnabled').checked;
+    let taxName = document.getElementById('taxName').value;
+    
+    if (taxName === 'Custom') {
+        taxName = document.getElementById('customTaxName').value || 'Custom Tax';
+    }
+    
+    const taxData = {
+        tax_enabled: taxEnabled ? 1 : 0,
+        tax_name: taxName,
+        tax_rate: parseFloat(document.getElementById('taxRate').value) || 0,
+        tax_number: document.getElementById('taxNumber').value || ''
+    };
+    
+    try {
+        // Save to localStorage first
+        localStorage.setItem('taxSettings', JSON.stringify(taxData));
+        
+        // Save to API
+        if (typeof CompanyAPI !== 'undefined') {
+            const companies = await CompanyAPI.getAll();
+            if (companies && companies.length > 0) {
+                const company = companies[0];
+                const updatedCompany = { ...company, ...taxData };
+                const result = await CompanyAPI.update(company.id, updatedCompany);
+                console.log('Tax settings saved to API:', result);
                 showAlert('Tax settings saved successfully!', 'success');
-                
-            } catch (error) {
-                console.error('Error saving tax settings:', error);
-                showAlert('Tax settings saved locally!', 'success');
+            } else {
+                // Create new company record
+                const newCompany = {
+                    name: 'Your Business Name',
+                    email: 'hello@yourbusiness.com',
+                    ...taxData
+                };
+                await CompanyAPI.create(newCompany);
+                showAlert('Tax settings saved successfully!', 'success');
             }
+        } else {
+            showAlert('Tax settings saved locally!', 'success');
         }
+        
+    } catch (error) {
+        console.error('Error saving tax settings:', error);
+        showAlert('Error saving tax settings: ' + error.message, 'error');
+    }
+}
         
         function loadTaxSettings() {
             const savedTax = localStorage.getItem('taxSettings');
