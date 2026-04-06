@@ -2,7 +2,7 @@
 const API_BASE = window.APP_CONFIG?.API_BASE || 
                  (window.location.hostname === 'localhost' 
                    ? 'http://localhost:8787/api'
-                   : 'https://invoice-backend.atologbook.workers.dev/api');
+                   : 'https://invoice-backend.workers.dev/api');
 
 console.log('🔧 API Module Loaded');
 console.log('📍 API Base URL:', API_BASE);
