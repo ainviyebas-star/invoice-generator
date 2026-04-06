@@ -13,7 +13,7 @@ window.APP_CONFIG = {
 if (window.APP_CONFIG.API_BASE === '%API_BASE_URL%') {
     window.APP_CONFIG.API_BASE = window.location.hostname === 'localhost' 
         ? 'http://localhost:8787/api'
-        : 'https://invoice-backend.atologbook.workers.dev/api';
+        : 'https://invoice-backend.cloudflaselab.workers.dev/api';
 }
 
 console.log('🚀 App Config:', window.APP_CONFIG);

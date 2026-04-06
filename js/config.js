@@ -19,7 +19,7 @@ if (window.APP_CONFIG.API_BASE === '%API_BASE_URL%' || window.APP_CONFIG.API_BAS
     } 
     // GitHub Pages production fallback
     else {
-        window.APP_CONFIG.API_BASE = 'https://invoice-backend.atologbook.workers.dev/api';
+        window.APP_CONFIG.API_BASE = 'https://invoice-backend.cloudflarelab.workers.dev/api';
         window.APP_CONFIG.ENVIRONMENT = 'production';
     }
     
