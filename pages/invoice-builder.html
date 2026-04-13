@@ -611,7 +611,16 @@
             if (statusText) statusText.textContent = status;
         }
         
-        // Parse extracted text
+        // Helper function to parse currency values (handles $1,260.00 format)
+        function parseCurrency(value) {
+            if (!value) return 0;
+            // Remove $, commas, and spaces
+            const cleaned = String(value).replace(/[$,]/g, '').replace(/\s/g, '');
+            const num = parseFloat(cleaned);
+            return isNaN(num) ? 0 : num;
+        }
+        
+        // Parse extracted text - IMPROVED VERSION
         function parseInvoiceText(text) {
             const invoice = {
                 invoice_number: '',
@@ -625,50 +634,154 @@
                 items: []
             };
             
-            // Extract Invoice Number
-            const invMatch = text.match(/Invoice\s*(?:Number|No|#)?\s*[:\-]?\s*([A-Z0-9\-]{4,20})/i);
-            if (invMatch) invoice.invoice_number = invMatch[1];
+            console.log('Raw OCR text:', text);
             
-            // Extract Date
-            const dateMatch = text.match(/(?:Date|Issue Date)\s*[:\-]?\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})/i);
-            if (dateMatch) invoice.invoice_date = dateMatch[1];
-            
-            // Extract Due Date
-            const dueMatch = text.match(/Due\s*Date\s*[:\-]?\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})/i);
-            if (dueMatch) invoice.due_date = dueMatch[1];
-            
-            // Extract Total
-            const totalMatch = text.match(/Total\s*(?:Amount|Due)?\s*[:\-]?\s*\$?\s*(\d+(?:\.\d{2})?)/i);
-            if (totalMatch) invoice.total = parseFloat(totalMatch[1]);
-            
-            // Extract Subtotal
-            const subtotalMatch = text.match(/Subtotal\s*[:\-]?\s*\$?\s*(\d+(?:\.\d{2})?)/i);
-            if (subtotalMatch) invoice.subtotal = parseFloat(subtotalMatch[1]);
-            
-            // Extract Tax Rate
-            const taxMatch = text.match(/(?:GST|VAT|Tax)\s*(?:\((\d+(?:\.\d+)?)%\))?/i);
-            if (taxMatch && taxMatch[1]) invoice.tax_rate = parseFloat(taxMatch[1]);
-            
-            // Calculate tax amount if we have subtotal and rate
-            if (invoice.subtotal > 0 && invoice.tax_rate > 0) {
-                invoice.tax_amount = (invoice.subtotal * invoice.tax_rate) / 100;
-            }
-            
-            // If total exists but subtotal doesn't, estimate subtotal
-            if (invoice.total > 0 && invoice.subtotal === 0 && invoice.tax_rate > 0) {
-                invoice.subtotal = invoice.total / (1 + invoice.tax_rate / 100);
-                invoice.tax_amount = invoice.total - invoice.subtotal;
-            }
-            
-            // Extract Vendor Name (first few lines often contain business name)
-            const lines = text.split('\n');
-            for (let i = 0; i < Math.min(5, lines.length); i++) {
-                const line = lines[i].trim();
-                if (line.length > 5 && line.length < 100 && !line.match(/invoice|date|total|subtotal/i)) {
-                    invoice.vendor_name = line;
+            // Extract Invoice Number - multiple patterns
+            const invPatterns = [
+                /Invoice\s*(?:Number|No|#)?\s*[:\-]?\s*([A-Z0-9\-]{4,20})/i,
+                /INV(?:-|\s)?([A-Z0-9\-]+)/i,
+                /Invoice\s*ID\s*[:\-]?\s*([A-Z0-9\-]+)/i
+            ];
+            for (const pattern of invPatterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    invoice.invoice_number = match[1].trim();
                     break;
                 }
             }
+            
+            // Extract Date
+            const datePatterns = [
+                /Invoice\s*Date\s*[:\-]?\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})/i,
+                /Date\s*[:\-]?\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})/i,
+                /Issue\s*Date\s*[:\-]?\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})/i,
+                /(\d{2}[/\-]\d{2}[/\-]\d{4})/
+            ];
+            for (const pattern of datePatterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    invoice.invoice_date = match[1].trim();
+                    break;
+                }
+            }
+            
+            // Extract Due Date
+            const duePatterns = [
+                /Due\s*Date\s*[:\-]?\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})/i,
+                /Payment\s*Due\s*[:\-]?\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})/i
+            ];
+            for (const pattern of duePatterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    invoice.due_date = match[1].trim();
+                    break;
+                }
+            }
+            
+            // Extract Total Amount
+            const totalPatterns = [
+                /Total\s*(?:Amount|Due)?\s*[:\-]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
+                /Grand\s*Total\s*[:\-]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
+                /Amount\s*Due\s*[:\-]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
+                /TOTAL\s*[:\-]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i
+            ];
+            for (const pattern of totalPatterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    invoice.total = parseCurrency(match[1]);
+                    console.log('Total found:', invoice.total);
+                    break;
+                }
+            }
+            
+            // Extract Subtotal
+            const subtotalPatterns = [
+                /Subtotal\s*[:\-]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
+                /Sub\s*Total\s*[:\-]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
+                /SUBTOTAL\s*[:\-]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i
+            ];
+            for (const pattern of subtotalPatterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    invoice.subtotal = parseCurrency(match[1]);
+                    console.log('Subtotal found:', invoice.subtotal);
+                    break;
+                }
+            }
+            
+            // Extract Tax Rate
+            const taxRateMatch = text.match(/(?:GST|VAT|HST|Tax)\s*(?:\(?(\d+(?:\.\d+)?)%\)?)?/i);
+            if (taxRateMatch && taxRateMatch[1]) {
+                invoice.tax_rate = parseFloat(taxRateMatch[1]);
+                console.log('Tax rate found:', invoice.tax_rate);
+            }
+            
+            // Extract Tax Amount
+            const taxAmountPatterns = [
+                /(?:GST|VAT|HST|Tax)\s*(?:\([\d.]+%\))?\s*[:\-]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
+                /Tax\s*Amount\s*[:\-]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i
+            ];
+            for (const pattern of taxAmountPatterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    invoice.tax_amount = parseCurrency(match[1]);
+                    console.log('Tax amount found:', invoice.tax_amount);
+                    break;
+                }
+            }
+            
+            // If we have subtotal and tax rate but no tax amount, calculate it
+            if (invoice.subtotal > 0 && invoice.tax_rate > 0 && invoice.tax_amount === 0) {
+                invoice.tax_amount = (invoice.subtotal * invoice.tax_rate) / 100;
+                console.log('Calculated tax amount:', invoice.tax_amount);
+            }
+            
+            // If we have total and tax rate but no subtotal, calculate subtotal
+            if (invoice.total > 0 && invoice.tax_rate > 0 && invoice.subtotal === 0) {
+                invoice.subtotal = invoice.total / (1 + invoice.tax_rate / 100);
+                invoice.tax_amount = invoice.total - invoice.subtotal;
+                console.log('Calculated subtotal from total:', invoice.subtotal);
+            }
+            
+            // If we have total and subtotal but no tax amount, calculate it
+            if (invoice.total > 0 && invoice.subtotal > 0 && invoice.tax_amount === 0) {
+                invoice.tax_amount = invoice.total - invoice.subtotal;
+                if (invoice.subtotal > 0) {
+                    invoice.tax_rate = (invoice.tax_amount / invoice.subtotal) * 100;
+                }
+            }
+            
+            // Extract Vendor Name
+            const vendorPatterns = [
+                /From\s*[:\-]?\s*([A-Za-z0-9\s&.,]+)(?:\n|$)/i,
+                /Company\s*[:\-]?\s*([A-Za-z0-9\s&.,]+)/i,
+                /^([A-Za-z0-9\s&.,]+)(?:\n|$)/i
+            ];
+            for (const pattern of vendorPatterns) {
+                const match = text.match(pattern);
+                if (match && match[1] && match[1].length > 3 && match[1].length < 50) {
+                    let vendor = match[1].trim();
+                    if (!vendor.match(/invoice|thank you|subtotal|total/i)) {
+                        invoice.vendor_name = vendor;
+                        break;
+                    }
+                }
+            }
+            
+            // If no vendor found, try to get from the first non-empty line
+            if (!invoice.vendor_name) {
+                const lines = text.split('\n');
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed.length > 5 && trimmed.length < 60 && 
+                        !trimmed.match(/invoice|date|total|subtotal|thank|page|http/i)) {
+                        invoice.vendor_name = trimmed;
+                        break;
+                    }
+                }
+            }
+            
+            console.log('Parsed invoice data:', invoice);
             
             return invoice;
         }
@@ -704,6 +817,10 @@
         function displayOCRPreview(data) {
             const previewDiv = document.getElementById('ocrPreview');
             
+            const formatCurrency = (value) => {
+                return value ? `$${value.toFixed(2)}` : '$0.00';
+            };
+            
             previewDiv.innerHTML = `
                 <div class="ocr-result-card">
                     <h4 style="margin-bottom: 0.75rem;">📋 Extracted Information</h4>
@@ -725,7 +842,7 @@
                     </div>
                     <div class="ocr-field">
                         <span class="ocr-field-label">Subtotal:</span>
-                        <span class="ocr-field-value">$${data.subtotal.toFixed(2)}</span>
+                        <span class="ocr-field-value">${formatCurrency(data.subtotal)}</span>
                     </div>
                     <div class="ocr-field">
                         <span class="ocr-field-label">Tax Rate:</span>
@@ -733,11 +850,11 @@
                     </div>
                     <div class="ocr-field">
                         <span class="ocr-field-label">Tax Amount:</span>
-                        <span class="ocr-field-value">$${data.tax_amount.toFixed(2)}</span>
+                        <span class="ocr-field-value">${formatCurrency(data.tax_amount)}</span>
                     </div>
                     <div class="ocr-field">
                         <span class="ocr-field-label">Total:</span>
-                        <span class="ocr-field-value"><strong>$${data.total.toFixed(2)}</strong></span>
+                        <span class="ocr-field-value"><strong>${formatCurrency(data.total)}</strong></span>
                     </div>
                     <button type="button" class="btn btn-primary accept-ocr-btn" onclick="acceptOCRData()">
                         ✅ Accept & Fill Invoice
@@ -750,9 +867,10 @@
         window.acceptOCRData = function() {
             if (!lastOcrResult) return;
             
+            console.log('Accepting OCR data:', lastOcrResult);
+            
             // Fill invoice number if detected
             if (lastOcrResult.invoice_number) {
-                // You can add an invoice number field or use it as reference
                 console.log('Invoice number detected:', lastOcrResult.invoice_number);
             }
             
