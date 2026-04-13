@@ -400,6 +400,256 @@
                         <textarea id="terms" rows="2" placeholder="Payment due within 30 days"></textarea>
                     </div>
                 </div>
+
+<!-- OCR Upload Button -->
+<div class="form-section">
+    <div class="section-title">
+        <span>📸</span>
+        <span>Quick Import from Invoice</span>
+    </div>
+    <div class="form-group">
+        <label>Upload Invoice Image/PDF to auto-fill</label>
+        <div class="ocr-upload-area" id="ocrUploadArea">
+            <input type="file" id="ocrFileInput" accept="image/*,application/pdf" style="display: none;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('ocrFileInput').click()">
+                📄 Upload Invoice
+            </button>
+            <div id="ocrProgress" style="display: none; margin-top: 1rem;">
+                <div class="progress-bar">
+                    <div id="ocrProgressBar" class="progress-fill"></div>
+                </div>
+                <p id="ocrStatus" style="font-size: 0.875rem; margin-top: 0.5rem;"></p>
+            </div>
+            <div id="ocrPreview" style="display: none; margin-top: 1rem;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ocr-upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        background: #f8fafc;
+        transition: all 0.2s;
+    }
+    
+    .ocr-upload-area:hover {
+        border-color: #3b82f6;
+        background: #f0f9ff;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        width: 0%;
+        height: 100%;
+        background: #3b82f6;
+        transition: width 0.3s;
+    }
+    
+    .ocr-result-card {
+        background: #f1f5f9;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .ocr-field {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .ocr-field:last-child {
+        border-bottom: none;
+    }
+    
+    .ocr-field-label {
+        font-weight: 600;
+        color: #475569;
+    }
+    
+    .ocr-field-value {
+        color: #1e293b;
+    }
+    
+    .accept-ocr-btn {
+        margin-top: 1rem;
+        width: 100%;
+    }
+</style>
+
+<script type="module">
+    // Import OCR processor
+    import('./js/ocr-processor.js').then(module => {
+        window.OCRProcessor = module;
+    });
+    
+    let lastOcrResult = null;
+    
+    // Handle file upload
+    document.getElementById('ocrFileInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const progressDiv = document.getElementById('ocrProgress');
+        const progressBar = document.getElementById('ocrProgressBar');
+        const statusText = document.getElementById('ocrStatus');
+        const previewDiv = document.getElementById('ocrPreview');
+        
+        progressDiv.style.display = 'block';
+        previewDiv.style.display = 'none';
+        
+        // Listen for progress updates
+        window.addEventListener('ocrProgress', (event) => {
+            const { progress, status } = event.detail;
+            progressBar.style.width = `${progress}%`;
+            statusText.textContent = status;
+        });
+        
+        try {
+            const result = await window.OCRProcessor.processInvoice(file);
+            
+            if (result.success) {
+                lastOcrResult = result;
+                displayOcrPreview(result);
+                previewDiv.style.display = 'block';
+                showAlert('Invoice data extracted successfully! Review and accept.', 'success');
+            } else {
+                showAlert('OCR failed: ' + result.error, 'error');
+            }
+        } catch (error) {
+            console.error('OCR Error:', error);
+            showAlert('Error processing invoice: ' + error.message, 'error');
+        } finally {
+            progressDiv.style.display = 'none';
+            e.target.value = '';
+        }
+    });
+    
+    function displayOcrPreview(result) {
+        const data = result.invoice_data;
+        const previewDiv = document.getElementById('ocrPreview');
+        
+        previewDiv.innerHTML = `
+            <div class="ocr-result-card">
+                <h4 style="margin-bottom: 0.75rem;">📋 Extracted Information</h4>
+                <div class="ocr-field">
+                    <span class="ocr-field-label">Invoice #:</span>
+                    <span class="ocr-field-value">${data.invoice_number || 'Not detected'}</span>
+                </div>
+                <div class="ocr-field">
+                    <span class="ocr-field-label">Invoice Date:</span>
+                    <span class="ocr-field-value">${data.invoice_date || 'Not detected'}</span>
+                </div>
+                <div class="ocr-field">
+                    <span class="ocr-field-label">Due Date:</span>
+                    <span class="ocr-field-value">${data.due_date || 'Not detected'}</span>
+                </div>
+                <div class="ocr-field">
+                    <span class="ocr-field-label">Vendor:</span>
+                    <span class="ocr-field-value">${data.vendor_name || 'Not detected'}</span>
+                </div>
+                <div class="ocr-field">
+                    <span class="ocr-field-label">Subtotal:</span>
+                    <span class="ocr-field-value">$${data.subtotal.toFixed(2)}</span>
+                </div>
+                <div class="ocr-field">
+                    <span class="ocr-field-label">Tax (${data.tax_rate}%):</span>
+                    <span class="ocr-field-value">$${data.tax_amount.toFixed(2)}</span>
+                </div>
+                <div class="ocr-field">
+                    <span class="ocr-field-label">Total:</span>
+                    <span class="ocr-field-value"><strong>$${data.total.toFixed(2)}</strong></span>
+                </div>
+                <div class="ocr-field">
+                    <span class="ocr-field-label">Items Detected:</span>
+                    <span class="ocr-field-value">${data.items.length} items</span>
+                </div>
+                <button type="button" class="btn btn-primary accept-ocr-btn" onclick="acceptOcrData()">
+                    ✅ Accept & Fill Invoice
+                </button>
+            </div>
+        `;
+    }
+    
+    async function acceptOcrData() {
+        if (!lastOcrResult) return;
+        
+        // Find or create customer
+        const customerName = lastOcrResult.invoice_data.vendor_name || 'OCR Import Customer';
+        
+        // Check if customer exists
+        const customers = await CustomerAPI.getAll();
+        let customer = customers.find(c => c.name === customerName);
+        
+        if (!customer) {
+            // Create new customer
+            customer = await CustomerAPI.create({
+                company_id: 1,
+                name: customerName,
+                notes: `Auto-created from OCR import. Original invoice: ${lastOcrResult.invoice_data.invoice_number}`
+            });
+            showAlert(`Created new customer: ${customerName}`, 'info');
+        }
+        
+        // Create invoice from OCR data
+        const invoiceData = await window.OCRProcessor.createInvoiceFromOCR(
+            lastOcrResult, 
+            customer.id,
+            parseInt(document.getElementById('templateSelect').value) || 1
+        );
+        
+        // Fill the form
+        document.getElementById('customerSelect').value = customer.id;
+        document.getElementById('poNumber').value = invoiceData.po_number;
+        document.getElementById('issueDate').value = invoiceData.issue_date;
+        if (invoiceData.due_date) {
+            document.getElementById('dueDate').value = invoiceData.due_date;
+        }
+        document.getElementById('notes').value = invoiceData.notes;
+        
+        // Fill items
+        items = invoiceData.items.map(item => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.quantity * item.unit_price
+        }));
+        
+        // Apply tax if detected
+        if (invoiceData.tax_enabled && invoiceData.tax_rate > 0) {
+            const taxCheckbox = document.getElementById('applyTaxCheckbox');
+            if (taxCheckbox) {
+                taxCheckbox.checked = true;
+                taxRate = invoiceData.tax_rate;
+                taxName = invoiceData.tax_name;
+                toggleTax();
+            }
+        }
+        
+        renderItems();
+        updateSummary();
+        
+        // Hide preview
+        document.getElementById('ocrPreview').style.display = 'none';
+        showAlert('Invoice data filled! Review and click Create Invoice.', 'success');
+    }
+    
+    window.acceptOcrData = acceptOcrData;
+</script>
+
+
+
                 
                 <!-- Summary with Tax Display -->
                 <div class="summary-card">
