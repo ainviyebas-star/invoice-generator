@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Invoice - InvoicePro</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         .invoice-builder {
             background: white;
@@ -279,6 +281,69 @@
             border: 1px solid #bfdbfe;
         }
         
+        /* OCR Styles */
+        .ocr-upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            background: #f8fafc;
+            transition: all 0.2s;
+        }
+        
+        .ocr-upload-area:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #3b82f6;
+            transition: width 0.3s;
+        }
+        
+        .ocr-result-card {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .ocr-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .ocr-field:last-child {
+            border-bottom: none;
+        }
+        
+        .ocr-field-label {
+            font-weight: 600;
+            color: #475569;
+        }
+        
+        .ocr-field-value {
+            color: #1e293b;
+        }
+        
+        .accept-ocr-btn {
+            margin-top: 1rem;
+            width: 100%;
+        }
+        
         @media (max-width: 768px) {
             .items-header, .item-row {
                 grid-template-columns: 1fr;
@@ -401,255 +466,29 @@
                     </div>
                 </div>
 
-<!-- OCR Upload Button -->
-<div class="form-section">
-    <div class="section-title">
-        <span>📸</span>
-        <span>Quick Import from Invoice</span>
-    </div>
-    <div class="form-group">
-        <label>Upload Invoice Image/PDF to auto-fill</label>
-        <div class="ocr-upload-area" id="ocrUploadArea">
-            <input type="file" id="ocrFileInput" accept="image/*,application/pdf" style="display: none;">
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('ocrFileInput').click()">
-                📄 Upload Invoice
-            </button>
-            <div id="ocrProgress" style="display: none; margin-top: 1rem;">
-                <div class="progress-bar">
-                    <div id="ocrProgressBar" class="progress-fill"></div>
+                <!-- OCR Upload Button -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <span>📸</span>
+                        <span>Quick Import from Invoice</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Invoice Image to auto-fill (PNG, JPG)</label>
+                        <div class="ocr-upload-area" id="ocrUploadArea">
+                            <input type="file" id="ocrFileInput" accept="image/*" style="display: none;">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('ocrFileInput').click()">
+                                📄 Upload Invoice Image
+                            </button>
+                            <div id="ocrProgress" style="display: none; margin-top: 1rem;">
+                                <div class="progress-bar">
+                                    <div id="ocrProgressBar" class="progress-fill"></div>
+                                </div>
+                                <p id="ocrStatus" style="font-size: 0.875rem; margin-top: 0.5rem;"></p>
+                            </div>
+                            <div id="ocrPreview" style="display: none; margin-top: 1rem;"></div>
+                        </div>
+                    </div>
                 </div>
-                <p id="ocrStatus" style="font-size: 0.875rem; margin-top: 0.5rem;"></p>
-            </div>
-            <div id="ocrPreview" style="display: none; margin-top: 1rem;"></div>
-        </div>
-    </div>
-</div>
-
-<style>
-    .ocr-upload-area {
-        border: 2px dashed #cbd5e1;
-        border-radius: 12px;
-        padding: 2rem;
-        text-align: center;
-        background: #f8fafc;
-        transition: all 0.2s;
-    }
-    
-    .ocr-upload-area:hover {
-        border-color: #3b82f6;
-        background: #f0f9ff;
-    }
-    
-    .progress-bar {
-        width: 100%;
-        height: 8px;
-        background: #e2e8f0;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    
-    .progress-fill {
-        width: 0%;
-        height: 100%;
-        background: #3b82f6;
-        transition: width 0.3s;
-    }
-    
-    .ocr-result-card {
-        background: #f1f5f9;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-top: 1rem;
-    }
-    
-    .ocr-field {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.5rem;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    
-    .ocr-field:last-child {
-        border-bottom: none;
-    }
-    
-    .ocr-field-label {
-        font-weight: 600;
-        color: #475569;
-    }
-    
-    .ocr-field-value {
-        color: #1e293b;
-    }
-    
-    .accept-ocr-btn {
-        margin-top: 1rem;
-        width: 100%;
-    }
-</style>
-
-<script type="module">
-    // Import OCR processor
-    import('./js/ocr-processor.js').then(module => {
-        window.OCRProcessor = module;
-    });
-    
-    let lastOcrResult = null;
-    
-    // Handle file upload
-    document.getElementById('ocrFileInput').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const progressDiv = document.getElementById('ocrProgress');
-        const progressBar = document.getElementById('ocrProgressBar');
-        const statusText = document.getElementById('ocrStatus');
-        const previewDiv = document.getElementById('ocrPreview');
-        
-        progressDiv.style.display = 'block';
-        previewDiv.style.display = 'none';
-        
-        // Listen for progress updates
-        window.addEventListener('ocrProgress', (event) => {
-            const { progress, status } = event.detail;
-            progressBar.style.width = `${progress}%`;
-            statusText.textContent = status;
-        });
-        
-        try {
-            const result = await window.OCRProcessor.processInvoice(file);
-            
-            if (result.success) {
-                lastOcrResult = result;
-                displayOcrPreview(result);
-                previewDiv.style.display = 'block';
-                showAlert('Invoice data extracted successfully! Review and accept.', 'success');
-            } else {
-                showAlert('OCR failed: ' + result.error, 'error');
-            }
-        } catch (error) {
-            console.error('OCR Error:', error);
-            showAlert('Error processing invoice: ' + error.message, 'error');
-        } finally {
-            progressDiv.style.display = 'none';
-            e.target.value = '';
-        }
-    });
-    
-    function displayOcrPreview(result) {
-        const data = result.invoice_data;
-        const previewDiv = document.getElementById('ocrPreview');
-        
-        previewDiv.innerHTML = `
-            <div class="ocr-result-card">
-                <h4 style="margin-bottom: 0.75rem;">📋 Extracted Information</h4>
-                <div class="ocr-field">
-                    <span class="ocr-field-label">Invoice #:</span>
-                    <span class="ocr-field-value">${data.invoice_number || 'Not detected'}</span>
-                </div>
-                <div class="ocr-field">
-                    <span class="ocr-field-label">Invoice Date:</span>
-                    <span class="ocr-field-value">${data.invoice_date || 'Not detected'}</span>
-                </div>
-                <div class="ocr-field">
-                    <span class="ocr-field-label">Due Date:</span>
-                    <span class="ocr-field-value">${data.due_date || 'Not detected'}</span>
-                </div>
-                <div class="ocr-field">
-                    <span class="ocr-field-label">Vendor:</span>
-                    <span class="ocr-field-value">${data.vendor_name || 'Not detected'}</span>
-                </div>
-                <div class="ocr-field">
-                    <span class="ocr-field-label">Subtotal:</span>
-                    <span class="ocr-field-value">$${data.subtotal.toFixed(2)}</span>
-                </div>
-                <div class="ocr-field">
-                    <span class="ocr-field-label">Tax (${data.tax_rate}%):</span>
-                    <span class="ocr-field-value">$${data.tax_amount.toFixed(2)}</span>
-                </div>
-                <div class="ocr-field">
-                    <span class="ocr-field-label">Total:</span>
-                    <span class="ocr-field-value"><strong>$${data.total.toFixed(2)}</strong></span>
-                </div>
-                <div class="ocr-field">
-                    <span class="ocr-field-label">Items Detected:</span>
-                    <span class="ocr-field-value">${data.items.length} items</span>
-                </div>
-                <button type="button" class="btn btn-primary accept-ocr-btn" onclick="acceptOcrData()">
-                    ✅ Accept & Fill Invoice
-                </button>
-            </div>
-        `;
-    }
-    
-    async function acceptOcrData() {
-        if (!lastOcrResult) return;
-        
-        // Find or create customer
-        const customerName = lastOcrResult.invoice_data.vendor_name || 'OCR Import Customer';
-        
-        // Check if customer exists
-        const customers = await CustomerAPI.getAll();
-        let customer = customers.find(c => c.name === customerName);
-        
-        if (!customer) {
-            // Create new customer
-            customer = await CustomerAPI.create({
-                company_id: 1,
-                name: customerName,
-                notes: `Auto-created from OCR import. Original invoice: ${lastOcrResult.invoice_data.invoice_number}`
-            });
-            showAlert(`Created new customer: ${customerName}`, 'info');
-        }
-        
-        // Create invoice from OCR data
-        const invoiceData = await window.OCRProcessor.createInvoiceFromOCR(
-            lastOcrResult, 
-            customer.id,
-            parseInt(document.getElementById('templateSelect').value) || 1
-        );
-        
-        // Fill the form
-        document.getElementById('customerSelect').value = customer.id;
-        document.getElementById('poNumber').value = invoiceData.po_number;
-        document.getElementById('issueDate').value = invoiceData.issue_date;
-        if (invoiceData.due_date) {
-            document.getElementById('dueDate').value = invoiceData.due_date;
-        }
-        document.getElementById('notes').value = invoiceData.notes;
-        
-        // Fill items
-        items = invoiceData.items.map(item => ({
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            total: item.quantity * item.unit_price
-        }));
-        
-        // Apply tax if detected
-        if (invoiceData.tax_enabled && invoiceData.tax_rate > 0) {
-            const taxCheckbox = document.getElementById('applyTaxCheckbox');
-            if (taxCheckbox) {
-                taxCheckbox.checked = true;
-                taxRate = invoiceData.tax_rate;
-                taxName = invoiceData.tax_name;
-                toggleTax();
-            }
-        }
-        
-        renderItems();
-        updateSummary();
-        
-        // Hide preview
-        document.getElementById('ocrPreview').style.display = 'none';
-        showAlert('Invoice data filled! Review and click Create Invoice.', 'success');
-    }
-    
-    window.acceptOcrData = acceptOcrData;
-</script>
-
-
-
                 
                 <!-- Summary with Tax Display -->
                 <div class="summary-card">
@@ -693,6 +532,7 @@
             </form>
         </div>
     </main>
+    
     <script src="../js/logger.js"></script>
     <script src="../js/security.js"></script>
     <script src="../js/config.js"></script>
@@ -707,6 +547,9 @@
         let taxName = 'GST';
         let taxAmount = 0;
         let applyTax = false;
+        
+        // OCR variables
+        let lastOcrResult = null;
         
         // ============================================
         // SHOW ALERT FUNCTION
@@ -725,6 +568,267 @@
         }
         
         // ============================================
+        // OCR FUNCTIONS
+        // ============================================
+        
+        // Extract text from image using Tesseract.js
+        async function extractTextFromImage(file) {
+            return new Promise((resolve, reject) => {
+                if (typeof Tesseract === 'undefined') {
+                    reject(new Error('Tesseract.js not loaded. Please check your internet connection.'));
+                    return;
+                }
+                
+                updateOCRProgress(5, 'Loading image...');
+                
+                Tesseract.recognize(
+                    file,
+                    'eng',
+                    {
+                        logger: (m) => {
+                            if (m.status === 'recognizing text') {
+                                const progress = 10 + (m.progress * 80);
+                                updateOCRProgress(progress, `Processing: ${Math.round(m.progress * 100)}%`);
+                            }
+                        }
+                    }
+                )
+                .then(({ data: { text } }) => {
+                    resolve(text);
+                })
+                .catch((err) => {
+                    console.error('Tesseract error:', err);
+                    reject(err);
+                });
+            });
+        }
+        
+        // Update OCR progress
+        function updateOCRProgress(progress, status) {
+            const progressBar = document.getElementById('ocrProgressBar');
+            const statusText = document.getElementById('ocrStatus');
+            if (progressBar) progressBar.style.width = `${progress}%`;
+            if (statusText) statusText.textContent = status;
+        }
+        
+        // Parse extracted text
+        function parseInvoiceText(text) {
+            const invoice = {
+                invoice_number: '',
+                invoice_date: '',
+                due_date: '',
+                vendor_name: '',
+                subtotal: 0,
+                tax_rate: 0,
+                tax_amount: 0,
+                total: 0,
+                items: []
+            };
+            
+            // Extract Invoice Number
+            const invMatch = text.match(/Invoice\s*(?:Number|No|#)?\s*[:\-]?\s*([A-Z0-9\-]{4,20})/i);
+            if (invMatch) invoice.invoice_number = invMatch[1];
+            
+            // Extract Date
+            const dateMatch = text.match(/(?:Date|Issue Date)\s*[:\-]?\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})/i);
+            if (dateMatch) invoice.invoice_date = dateMatch[1];
+            
+            // Extract Due Date
+            const dueMatch = text.match(/Due\s*Date\s*[:\-]?\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})/i);
+            if (dueMatch) invoice.due_date = dueMatch[1];
+            
+            // Extract Total
+            const totalMatch = text.match(/Total\s*(?:Amount|Due)?\s*[:\-]?\s*\$?\s*(\d+(?:\.\d{2})?)/i);
+            if (totalMatch) invoice.total = parseFloat(totalMatch[1]);
+            
+            // Extract Subtotal
+            const subtotalMatch = text.match(/Subtotal\s*[:\-]?\s*\$?\s*(\d+(?:\.\d{2})?)/i);
+            if (subtotalMatch) invoice.subtotal = parseFloat(subtotalMatch[1]);
+            
+            // Extract Tax Rate
+            const taxMatch = text.match(/(?:GST|VAT|Tax)\s*(?:\((\d+(?:\.\d+)?)%\))?/i);
+            if (taxMatch && taxMatch[1]) invoice.tax_rate = parseFloat(taxMatch[1]);
+            
+            // Calculate tax amount if we have subtotal and rate
+            if (invoice.subtotal > 0 && invoice.tax_rate > 0) {
+                invoice.tax_amount = (invoice.subtotal * invoice.tax_rate) / 100;
+            }
+            
+            // If total exists but subtotal doesn't, estimate subtotal
+            if (invoice.total > 0 && invoice.subtotal === 0 && invoice.tax_rate > 0) {
+                invoice.subtotal = invoice.total / (1 + invoice.tax_rate / 100);
+                invoice.tax_amount = invoice.total - invoice.subtotal;
+            }
+            
+            // Extract Vendor Name (first few lines often contain business name)
+            const lines = text.split('\n');
+            for (let i = 0; i < Math.min(5, lines.length); i++) {
+                const line = lines[i].trim();
+                if (line.length > 5 && line.length < 100 && !line.match(/invoice|date|total|subtotal/i)) {
+                    invoice.vendor_name = line;
+                    break;
+                }
+            }
+            
+            return invoice;
+        }
+        
+        // Handle file upload
+        async function handleOCRFileUpload(file) {
+            const progressDiv = document.getElementById('ocrProgress');
+            const previewDiv = document.getElementById('ocrPreview');
+            
+            progressDiv.style.display = 'block';
+            previewDiv.style.display = 'none';
+            updateOCRProgress(0, 'Starting OCR...');
+            
+            try {
+                const extractedText = await extractTextFromImage(file);
+                updateOCRProgress(95, 'Parsing invoice data...');
+                
+                const invoiceData = parseInvoiceText(extractedText);
+                lastOcrResult = invoiceData;
+                
+                displayOCRPreview(invoiceData);
+                previewDiv.style.display = 'block';
+                showAlert('Invoice data extracted successfully! Review and accept.', 'success');
+                
+            } catch (error) {
+                console.error('OCR Error:', error);
+                showAlert('OCR failed: ' + error.message, 'error');
+            } finally {
+                progressDiv.style.display = 'none';
+            }
+        }
+        
+        function displayOCRPreview(data) {
+            const previewDiv = document.getElementById('ocrPreview');
+            
+            previewDiv.innerHTML = `
+                <div class="ocr-result-card">
+                    <h4 style="margin-bottom: 0.75rem;">📋 Extracted Information</h4>
+                    <div class="ocr-field">
+                        <span class="ocr-field-label">Invoice #:</span>
+                        <span class="ocr-field-value">${data.invoice_number || 'Not detected'}</span>
+                    </div>
+                    <div class="ocr-field">
+                        <span class="ocr-field-label">Invoice Date:</span>
+                        <span class="ocr-field-value">${data.invoice_date || 'Not detected'}</span>
+                    </div>
+                    <div class="ocr-field">
+                        <span class="ocr-field-label">Due Date:</span>
+                        <span class="ocr-field-value">${data.due_date || 'Not detected'}</span>
+                    </div>
+                    <div class="ocr-field">
+                        <span class="ocr-field-label">Vendor:</span>
+                        <span class="ocr-field-value">${data.vendor_name || 'Not detected'}</span>
+                    </div>
+                    <div class="ocr-field">
+                        <span class="ocr-field-label">Subtotal:</span>
+                        <span class="ocr-field-value">$${data.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div class="ocr-field">
+                        <span class="ocr-field-label">Tax Rate:</span>
+                        <span class="ocr-field-value">${data.tax_rate}%</span>
+                    </div>
+                    <div class="ocr-field">
+                        <span class="ocr-field-label">Tax Amount:</span>
+                        <span class="ocr-field-value">$${data.tax_amount.toFixed(2)}</span>
+                    </div>
+                    <div class="ocr-field">
+                        <span class="ocr-field-label">Total:</span>
+                        <span class="ocr-field-value"><strong>$${data.total.toFixed(2)}</strong></span>
+                    </div>
+                    <button type="button" class="btn btn-primary accept-ocr-btn" onclick="acceptOCRData()">
+                        ✅ Accept & Fill Invoice
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Make acceptOCRData available globally
+        window.acceptOCRData = function() {
+            if (!lastOcrResult) return;
+            
+            // Fill invoice number if detected
+            if (lastOcrResult.invoice_number) {
+                // You can add an invoice number field or use it as reference
+                console.log('Invoice number detected:', lastOcrResult.invoice_number);
+            }
+            
+            // Fill dates if detected
+            if (lastOcrResult.invoice_date) {
+                const formattedDate = lastOcrResult.invoice_date.replace(/\//g, '-');
+                const dateParts = formattedDate.split('-');
+                if (dateParts.length === 3) {
+                    let isoDate;
+                    if (dateParts[0].length === 4) {
+                        isoDate = formattedDate;
+                    } else {
+                        isoDate = `${dateParts[2]}-${dateParts[0].padStart(2, '0')}-${dateParts[1].padStart(2, '0')}`;
+                    }
+                    document.getElementById('issueDate').value = isoDate;
+                }
+            }
+            
+            if (lastOcrResult.due_date) {
+                const formattedDate = lastOcrResult.due_date.replace(/\//g, '-');
+                const dateParts = formattedDate.split('-');
+                if (dateParts.length === 3) {
+                    let isoDate;
+                    if (dateParts[0].length === 4) {
+                        isoDate = formattedDate;
+                    } else {
+                        isoDate = `${dateParts[2]}-${dateParts[0].padStart(2, '0')}-${dateParts[1].padStart(2, '0')}`;
+                    }
+                    document.getElementById('dueDate').value = isoDate;
+                }
+            }
+            
+            // Add item from total if no items detected and total > 0
+            if (lastOcrResult.total > 0 && items.length === 0) {
+                items.push({
+                    description: lastOcrResult.vendor_name || 'Invoice from OCR',
+                    quantity: 1,
+                    unit_price: lastOcrResult.total,
+                    total: lastOcrResult.total
+                });
+                renderItems();
+            }
+            
+            // Apply tax if detected
+            if (lastOcrResult.tax_rate > 0 && lastOcrResult.tax_rate !== taxRate) {
+                const taxCheckbox = document.getElementById('applyTaxCheckbox');
+                if (taxCheckbox && !taxCheckbox.checked) {
+                    taxCheckbox.checked = true;
+                    taxRate = lastOcrResult.tax_rate;
+                    toggleTax();
+                }
+            }
+            
+            updateSummary();
+            
+            // Hide preview
+            document.getElementById('ocrPreview').style.display = 'none';
+            showAlert('Invoice data filled! Review and click Create Invoice.', 'success');
+        };
+        
+        // File input handler
+        document.getElementById('ocrFileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                showAlert('Please upload an image file (PNG, JPG, etc.)', 'error');
+                e.target.value = '';
+                return;
+            }
+            
+            await handleOCRFileUpload(file);
+            e.target.value = '';
+        });
+        
+        // ============================================
         // TAX STATE PERSISTENCE
         // ============================================
         function saveTaxState() {
@@ -741,7 +845,6 @@
                 if (applyTaxCheckbox) {
                     applyTaxCheckbox.checked = true;
                     applyTax = true;
-                    // Recalculate tax after items are loaded
                     setTimeout(() => {
                         calculateTax();
                         updateSummary();
@@ -761,7 +864,6 @@
         // ============================================
         async function loadTaxSettings() {
             try {
-                // Try to get from API first
                 if (typeof CompanyAPI !== 'undefined') {
                     const companies = await CompanyAPI.getAll();
                     if (companies && companies.length > 0) {
@@ -770,7 +872,6 @@
                         taxRate = company.tax_rate || 0;
                         taxName = company.tax_name || 'GST';
                         
-                        // Update localStorage
                         localStorage.setItem('taxSettings', JSON.stringify({
                             tax_enabled: taxEnabled ? 1 : 0,
                             tax_rate: taxRate,
@@ -778,7 +879,6 @@
                         }));
                     }
                 } else {
-                    // Fallback to localStorage
                     const savedTax = localStorage.getItem('taxSettings');
                     if (savedTax) {
                         const tax = JSON.parse(savedTax);
@@ -788,7 +888,6 @@
                     }
                 }
                 
-                // Update the tax label
                 const taxLabel = document.getElementById('taxLabel');
                 if (taxLabel && taxEnabled && taxRate > 0) {
                     taxLabel.textContent = `${taxName} (${taxRate}%)`;
@@ -803,94 +902,85 @@
             }
         }
         
-// Force reload tax settings from API
-async function forceReloadTaxSettings() {
-    try {
-        console.log('Force reloading tax settings from API...');
-        
-        // Clear cached settings to force fresh load
-        const cachedSettings = localStorage.getItem('taxSettings');
-        
-        // Fetch fresh from API
-        if (typeof CompanyAPI !== 'undefined') {
-            const companies = await CompanyAPI.getAll();
-            if (companies && companies.length > 0) {
-                const company = companies[0];
-                taxEnabled = company.tax_enabled === 1;
-                taxRate = company.tax_rate || 0;
-                taxName = company.tax_name || 'GST';
+        async function forceReloadTaxSettings() {
+            try {
+                console.log('Force reloading tax settings from API...');
                 
-                // Update localStorage with fresh data
-                const freshTaxData = {
-                    tax_enabled: taxEnabled ? 1 : 0,
-                    tax_rate: taxRate,
-                    tax_name: taxName,
-                    tax_number: company.tax_number || ''
-                };
-                localStorage.setItem('taxSettings', JSON.stringify(freshTaxData));
+                if (typeof CompanyAPI !== 'undefined') {
+                    const companies = await CompanyAPI.getAll();
+                    if (companies && companies.length > 0) {
+                        const company = companies[0];
+                        taxEnabled = company.tax_enabled === 1;
+                        taxRate = company.tax_rate || 0;
+                        taxName = company.tax_name || 'GST';
+                        
+                        const freshTaxData = {
+                            tax_enabled: taxEnabled ? 1 : 0,
+                            tax_rate: taxRate,
+                            tax_name: taxName,
+                            tax_number: company.tax_number || ''
+                        };
+                        localStorage.setItem('taxSettings', JSON.stringify(freshTaxData));
+                        
+                        console.log('Fresh tax settings loaded:', { taxEnabled, taxRate, taxName });
+                    } else {
+                        loadTaxSettingsFromLocal();
+                    }
+                } else {
+                    loadTaxSettingsFromLocal();
+                }
                 
-                console.log('Fresh tax settings loaded:', { taxEnabled, taxRate, taxName });
-            } else {
-                // No company found, use localStorage as fallback
+                const taxLabel = document.getElementById('taxLabel');
+                if (taxLabel && taxEnabled && taxRate > 0) {
+                    taxLabel.textContent = `${taxName} (${taxRate}%)`;
+                } else if (taxLabel) {
+                    taxLabel.textContent = 'Add Tax';
+                }
+                
+            } catch (error) {
+                console.error('Error force reloading tax settings:', error);
                 loadTaxSettingsFromLocal();
             }
-        } else {
-            loadTaxSettingsFromLocal();
         }
         
-        // Update UI
-        const taxLabel = document.getElementById('taxLabel');
-        if (taxLabel && taxEnabled && taxRate > 0) {
-            taxLabel.textContent = `${taxName} (${taxRate}%)`;
-        } else if (taxLabel) {
-            taxLabel.textContent = 'Add Tax';
+        function loadTaxSettingsFromLocal() {
+            const savedTax = localStorage.getItem('taxSettings');
+            if (savedTax) {
+                const tax = JSON.parse(savedTax);
+                taxEnabled = tax.tax_enabled === 1;
+                taxRate = tax.tax_rate || 0;
+                taxName = tax.tax_name || 'GST';
+                console.log('Tax settings loaded from localStorage:', { taxEnabled, taxRate, taxName });
+            }
         }
         
-    } catch (error) {
-        console.error('Error force reloading tax settings:', error);
-        loadTaxSettingsFromLocal();
-    }
-}
-
-function loadTaxSettingsFromLocal() {
-    const savedTax = localStorage.getItem('taxSettings');
-    if (savedTax) {
-        const tax = JSON.parse(savedTax);
-        taxEnabled = tax.tax_enabled === 1;
-        taxRate = tax.tax_rate || 0;
-        taxName = tax.tax_name || 'GST';
-        console.log('Tax settings loaded from localStorage:', { taxEnabled, taxRate, taxName });
-    }
-}
-        
- function toggleTax() {
-    const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
-    const removeTaxBtn = document.getElementById('removeTaxBtn');
-    const taxSummaryRow = document.getElementById('taxSummaryRow');
-    const taxNameDisplay = document.getElementById('taxNameDisplay');
-    
-    applyTax = applyTaxCheckbox.checked;
-    
-    console.log('Toggle tax called. Checked:', applyTax);
-    console.log('Tax rate:', taxRate);
-    console.log('Tax name:', taxName);
-    
-    // Save the state
-    saveTaxState();
-    
-    if (applyTax) {
-        calculateTax();
-        if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
-        if (taxSummaryRow) taxSummaryRow.style.display = 'flex';
-        if (taxNameDisplay) taxNameDisplay.textContent = `${taxName} (${taxRate}%)`;
-        showAlert(`${taxName} (${taxRate}%) applied to invoice`, 'info');
-    } else {
-        taxAmount = 0;
-        updateSummary();
-        if (removeTaxBtn) removeTaxBtn.style.display = 'none';
-        if (taxSummaryRow) taxSummaryRow.style.display = 'none';
-    }
-}
+        function toggleTax() {
+            const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+            const removeTaxBtn = document.getElementById('removeTaxBtn');
+            const taxSummaryRow = document.getElementById('taxSummaryRow');
+            const taxNameDisplay = document.getElementById('taxNameDisplay');
+            
+            applyTax = applyTaxCheckbox.checked;
+            
+            console.log('Toggle tax called. Checked:', applyTax);
+            console.log('Tax rate:', taxRate);
+            console.log('Tax name:', taxName);
+            
+            saveTaxState();
+            
+            if (applyTax) {
+                calculateTax();
+                if (removeTaxBtn) removeTaxBtn.style.display = 'inline-block';
+                if (taxSummaryRow) taxSummaryRow.style.display = 'flex';
+                if (taxNameDisplay) taxNameDisplay.textContent = `${taxName} (${taxRate}%)`;
+                showAlert(`${taxName} (${taxRate}%) applied to invoice`, 'info');
+            } else {
+                taxAmount = 0;
+                updateSummary();
+                if (removeTaxBtn) removeTaxBtn.style.display = 'none';
+                if (taxSummaryRow) taxSummaryRow.style.display = 'none';
+            }
+        }
         
         function calculateTax() {
             const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
@@ -910,9 +1000,7 @@ function loadTaxSettingsFromLocal() {
             if (removeTaxBtn) removeTaxBtn.style.display = 'none';
             if (taxSummaryRow) taxSummaryRow.style.display = 'none';
             
-            // Save the state
             saveTaxState();
-            
             showAlert(`${taxName} removed from invoice`, 'info');
         }
         
@@ -1035,7 +1123,6 @@ function loadTaxSettingsFromLocal() {
                     select.innerHTML = '<option value="">Select Customer</option>' + 
                         customers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
                     
-                    // Check if customer ID was passed in URL
                     const urlParams = new URLSearchParams(window.location.search);
                     const customerId = urlParams.get('customer');
                     if (customerId) {
@@ -1080,115 +1167,96 @@ function loadTaxSettingsFromLocal() {
             }
         }
         
- // Handle form submission - FIXED VERSION
-document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    // Validate API
-    if (typeof InvoiceAPI === 'undefined') {
-        showAlert('API not loaded. Please refresh the page.', 'error');
-        return;
-    }
-    
-    // Validate customer
-    const customerId = document.getElementById('customerSelect').value;
-    if (!customerId) {
-        showAlert('Please select a customer', 'error');
-        document.getElementById('customerSelect').focus();
-        return;
-    }
-    
-    // Validate items
-    const validItems = items.filter(item => 
-        item.description && item.description.trim() !== '' && 
-        item.quantity > 0 && 
-        item.unit_price > 0
-    );
-    
-    if (validItems.length === 0) {
-        showAlert('Please add at least one valid item with description, quantity, and price', 'error');
-        return;
-    }
-    
-    // Validate dates
-    const issueDate = document.getElementById('issueDate').value;
-    const dueDate = document.getElementById('dueDate').value;
-    
-    if (!issueDate || !dueDate) {
-        showAlert('Please select issue date and due date', 'error');
-        return;
-    }
-    
-    // Calculate subtotal
-    const subtotal = validItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
-    
-    // IMPORTANT: Get the checkbox state directly from the DOM
-    const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
-    const applyTaxValue = applyTaxCheckbox ? applyTaxCheckbox.checked : false;
-    
-    console.log('Tax checkbox checked:', applyTaxValue);
-    console.log('Tax rate:', taxRate);
-    console.log('Tax name:', taxName);
-    
-    // Calculate tax amount
-    const taxAmountValue = applyTaxValue ? (subtotal * taxRate) / 100 : 0;
-    const total = subtotal + taxAmountValue;
-    
-    console.log('Subtotal:', subtotal);
-    console.log('Tax amount:', taxAmountValue);
-    console.log('Total:', total);
-    
-    // Prepare invoice data
-    const invoiceData = {
-        company_id: 1,
-        customer_id: parseInt(customerId),
-        template_id: parseInt(document.getElementById('templateSelect').value),
-        invoice_number: `INV-${Date.now()}`,
-        po_number: document.getElementById('poNumber').value || '',
-        issue_date: issueDate,
-        due_date: dueDate,
-        status: 'draft',
-        subtotal: subtotal,
-        tax_enabled: applyTaxValue ? 1 : 0,
-        tax_name: taxName,
-        tax_rate: applyTaxValue ? taxRate : 0,
-        tax_amount: taxAmountValue,
-        total: total,
-        notes: document.getElementById('notes').value || '',
-        terms: document.getElementById('terms').value || '',
-        items: validItems.map(item => ({
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            total: item.quantity * item.unit_price
-        }))
-    };
-    
-    // Disable submit button
-    const submitBtn = document.querySelector('#invoiceForm button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Creating...';
-    submitBtn.disabled = true;
-    
-    try {
-        console.log('Creating invoice with data:', invoiceData);
-        const result = await InvoiceAPI.create(invoiceData);
-        console.log('Result:', result);
+        // Handle form submission
+        document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (typeof InvoiceAPI === 'undefined') {
+                showAlert('API not loaded. Please refresh the page.', 'error');
+                return;
+            }
+            
+            const customerId = document.getElementById('customerSelect').value;
+            if (!customerId) {
+                showAlert('Please select a customer', 'error');
+                document.getElementById('customerSelect').focus();
+                return;
+            }
+            
+            const validItems = items.filter(item => 
+                item.description && item.description.trim() !== '' && 
+                item.quantity > 0 && 
+                item.unit_price > 0
+            );
+            
+            if (validItems.length === 0) {
+                showAlert('Please add at least one valid item with description, quantity, and price', 'error');
+                return;
+            }
+            
+            const issueDate = document.getElementById('issueDate').value;
+            const dueDate = document.getElementById('dueDate').value;
+            
+            if (!issueDate || !dueDate) {
+                showAlert('Please select issue date and due date', 'error');
+                return;
+            }
+            
+            const subtotal = validItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+            const applyTaxCheckbox = document.getElementById('applyTaxCheckbox');
+            const applyTaxValue = applyTaxCheckbox ? applyTaxCheckbox.checked : false;
+            const taxAmountValue = applyTaxValue ? (subtotal * taxRate) / 100 : 0;
+            const total = subtotal + taxAmountValue;
+            
+            const invoiceData = {
+                company_id: 1,
+                customer_id: parseInt(customerId),
+                template_id: parseInt(document.getElementById('templateSelect').value),
+                invoice_number: `INV-${Date.now()}`,
+                po_number: document.getElementById('poNumber').value || '',
+                issue_date: issueDate,
+                due_date: dueDate,
+                status: 'draft',
+                subtotal: subtotal,
+                tax_enabled: applyTaxValue ? 1 : 0,
+                tax_name: taxName,
+                tax_rate: applyTaxValue ? taxRate : 0,
+                tax_amount: taxAmountValue,
+                total: total,
+                notes: document.getElementById('notes').value || '',
+                terms: document.getElementById('terms').value || '',
+                items: validItems.map(item => ({
+                    description: item.description,
+                    quantity: item.quantity,
+                    unit_price: item.unit_price,
+                    total: item.quantity * item.unit_price
+                }))
+            };
+            
+            const submitBtn = document.querySelector('#invoiceForm button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Creating...';
+            submitBtn.disabled = true;
+            
+            try {
+                console.log('Creating invoice:', invoiceData);
+                const result = await InvoiceAPI.create(invoiceData);
+                console.log('Result:', result);
+                
+                localStorage.removeItem('invoiceTaxState');
+                
+                showAlert('✅ Invoice created successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = 'invoices.html';
+                }, 1500);
+            } catch (error) {
+                console.error('Error creating invoice:', error);
+                showAlert('❌ Error creating invoice: ' + error.message, 'error');
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
         
-        // Clear saved tax state after successful creation (optional)
-        localStorage.removeItem('invoiceTaxState');
-        
-        showAlert('✅ Invoice created successfully!', 'success');
-        setTimeout(() => {
-            window.location.href = 'invoices.html';
-        }, 1500);
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        showAlert('❌ Error creating invoice: ' + error.message, 'error');
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
-    }
-});        
         // Set default dates
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
@@ -1200,15 +1268,14 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
         document.getElementById('dueDate').value = nextMonthStr;
         
         // Initialize page
-// Initialize page
-async function init() {
-    displayCompanyName();
-    await loadCustomers();
-    await loadTemplates();
-    await forceReloadTaxSettings(); // Use force reload instead of regular load
-    addItem(); // Add one empty item row
-    restoreTaxState(); // Restore saved tax checkbox state
-}
+        async function init() {
+            displayCompanyName();
+            await loadCustomers();
+            await loadTemplates();
+            await forceReloadTaxSettings();
+            addItem();
+            restoreTaxState();
+        }
         
         init();
     </script>
