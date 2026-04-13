@@ -787,28 +787,33 @@
             }
         }
         
-        function addField() {
-            const newKey = `custom_field_${customFields.length + 1}`;
-            customFields.push({
-                field_key: newKey,
-                field_label: 'New Field',
-                field_type: 'text',
-                is_required: false
-            });
-            renderFieldsList();
-            updateLivePreview();
-        }
+function addField() {
+    const newIndex = customFields.length;
+    customFields.push({
+        field_key: `field_${newIndex + 1}`,
+        field_label: 'New Field',
+        field_type: 'text',
+        is_required: false,
+        sort_order: newIndex,
+        width: 100,
+        placeholder: '',
+        validation_rules: '',
+        default_value: ''
+    });
+    renderFieldsList();
+    updateLivePreview();
+}
         
         function editField(index) {
-            const field = customFields[index];
-            const newLabel = prompt('Enter field label:', field.field_label);
-            if (newLabel) {
-                field.field_label = newLabel;
-                field.field_key = newLabel.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                renderFieldsList();
-                updateLivePreview();
-            }
-        }
+    const field = customFields[index];
+    const newLabel = prompt('Enter field label:', field.field_label);
+    if (newLabel && newLabel.trim()) {
+        field.field_label = newLabel.trim();
+        field.field_key = newLabel.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+        renderFieldsList();
+        updateLivePreview();
+    }
+}
         
         function removeField(index) {
             if (confirm('Remove this field?')) {
@@ -846,35 +851,80 @@
         }
         
         async function saveTemplate() {
-            const templateData = {
-                name: document.getElementById('templateName').value,
-                description: document.getElementById('templateDescription').value,
-                category: document.getElementById('templateCategory').value,
-                primary_color: document.getElementById('primaryColor').value,
-                secondary_color: document.getElementById('secondaryColor').value,
-                fields: customFields,
-                company_id: 1
-            };
-            
-            if (!templateData.name) {
-                showAlert('Please enter a template name', 'error');
-                return;
-            }
-            
-            try {
-                if (editingTemplateId) {
-                    await TemplateAPI.update(editingTemplateId, templateData);
-                    showAlert('Template updated successfully!', 'success');
-                } else {
-                    await TemplateAPI.create(templateData);
-                    showAlert('Template created successfully!', 'success');
-                }
-                closeEditor();
-                await loadTemplates();
-            } catch (error) {
-                showAlert('Error saving template: ' + error.message, 'error');
-            }
+    // Get form values with proper defaults - NO undefined values
+    const templateName = document.getElementById('templateName')?.value || '';
+    const templateDescription = document.getElementById('templateDescription')?.value || '';
+    const templateCategory = document.getElementById('templateCategory')?.value || 'custom';
+    const primaryColor = document.getElementById('primaryColor')?.value || '#8b5cf6';
+    const secondaryColor = document.getElementById('secondaryColor')?.value || '#6d28d9';
+    
+    // Validate required fields
+    if (!templateName.trim()) {
+        showAlert('Please enter a template name', 'error');
+        return;
+    }
+    
+    // CRITICAL: Clean up fields - ensure NO undefined values
+    const cleanFields = [];
+    for (let i = 0; i < customFields.length; i++) {
+        const field = customFields[i];
+        cleanFields.push({
+            field_key: String(field.field_key || `field_${i + 1}`),
+            field_label: String(field.field_label || 'New Field'),
+            field_type: String(field.field_type || 'text'),
+            is_required: field.is_required === true ? 1 : 0,
+            sort_order: typeof field.sort_order === 'number' ? field.sort_order : i,
+            width: typeof field.width === 'number' ? field.width : 100,
+            placeholder: String(field.placeholder || ''),
+            validation_rules: String(field.validation_rules || ''),
+            default_value: String(field.default_value || '')
+        });
+    }
+    
+    // Build template data with NO undefined values
+    const templateData = {
+        name: String(templateName),
+        description: String(templateDescription),
+        category: String(templateCategory),
+        primary_color: String(primaryColor),
+        secondary_color: String(secondaryColor),
+        fields: cleanFields,
+        company_id: 1
+    };
+    
+    console.log('Saving template with cleaned data:', JSON.stringify(templateData, null, 2));
+    
+    // Disable save button
+    const saveBtn = document.querySelector('#editorModal .btn-primary');
+    const originalText = saveBtn?.textContent || 'Save Template';
+    if (saveBtn) {
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
+    }
+    
+    try {
+        let result;
+        if (editingTemplateId) {
+            result = await TemplateAPI.update(editingTemplateId, templateData);
+            console.log('Update result:', result);
+            showAlert('Template updated successfully!', 'success');
+        } else {
+            result = await TemplateAPI.create(templateData);
+            console.log('Create result:', result);
+            showAlert('Template created successfully!', 'success');
         }
+        closeEditor();
+        await loadTemplates();
+    } catch (error) {
+        console.error('Error saving template:', error);
+        showAlert('Error saving template: ' + error.message, 'error');
+    } finally {
+        if (saveBtn) {
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        }
+    }
+}
         
         function showFullPreview(template) {
             const modal = document.getElementById('previewModal');
