@@ -227,6 +227,90 @@ function updateCompanyNameDisplay() {
     });
 }
 
+// frontend/js/api.js - Secure version with no sensitive data logging
+
+// Helper to sanitize data before logging (remove sensitive fields)
+function sanitizeForLogging(data) {
+    if (!data) return data;
+    
+    // Create a copy to avoid modifying original
+    const sanitized = JSON.parse(JSON.stringify(data));
+    
+    // List of sensitive fields to redact
+    const sensitiveFields = ['password', 'token', 'api_key', 'secret', 'authorization', 'credit_card', 'cvv'];
+    
+    function redactSensitive(obj) {
+        if (!obj || typeof obj !== 'object') return;
+        
+        for (const key in obj) {
+            if (sensitiveFields.some(field => key.toLowerCase().includes(field))) {
+                obj[key] = '[REDACTED]';
+            } else if (typeof obj[key] === 'object') {
+                redactSensitive(obj[key]);
+            }
+        }
+    }
+    
+    redactSensitive(sanitized);
+    return sanitized;
+}
+
+async function apiRequest(endpoint, options = {}) {
+    try {
+        const url = `${API_BASE}${endpoint}`;
+        
+        // Don't log full URL if it contains sensitive params
+        const safeUrl = url.replace(/([?&])(?:api_key|token|secret)=[^&]*/gi, '$1$2=[REDACTED]');
+        
+        // Only log in development
+        if (!isProduction) {
+            logger.debug('API Request:', {
+                method: options.method || 'GET',
+                url: safeUrl,
+                // Don't log request body if it contains sensitive data
+                body: options.body ? sanitizeForLogging(JSON.parse(options.body || '{}')) : undefined
+            });
+        }
+        
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            },
+        });
+        
+        // Clone response to read body without consuming it
+        const clonedResponse = response.clone();
+        const responseData = await clonedResponse.json().catch(() => null);
+        
+        // Only log in development and sanitize response
+        if (!isProduction && responseData) {
+            logger.debug('API Response:', {
+                status: response.status,
+                data: sanitizeForLogging(responseData)
+            });
+        }
+        
+        if (!response.ok) {
+            // Don't log full error details in production
+            const errorMessage = isProduction ? 'Request failed' : `HTTP ${response.status}`;
+            throw new Error(errorMessage);
+        }
+        
+        return responseData;
+        
+    } catch (error) {
+        // Log minimal error info in production
+        if (isProduction) {
+            logger.error('API request failed');
+        } else {
+            logger.error('API Error:', error.message);
+        }
+        throw error;
+    }
+}
+
 // Add this function to api.js
 async function getCompanyNameFromAPI() {
     try {
