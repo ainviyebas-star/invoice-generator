@@ -1,24 +1,35 @@
-// frontend/js/security.js - Complete Security Module
-// This file provides multiple layers of security protection for the invoice system
+// frontend/js/security.js - Complete Security Module (No Conflicts)
 
 // ============================================
-// 1. ENVIRONMENT DETECTION
+// 1. ENVIRONMENT DETECTION - Use config if available, otherwise detect
 // ============================================
 
-const isProduction = window.location.hostname !== 'localhost' && 
-                     !window.location.hostname.includes('127.0.0.1') &&
-                     !window.location.hostname.includes('192.168') &&
-                     !window.location.hostname.includes('::1');
+// Wait for config to load first, then check environment
+let SEC_IS_PRODUCTION = false;
 
-const isDevelopment = !isProduction;
+// Function to determine if production (uses existing config)
+function secIsProduction() {
+    // If APP_CONFIG is already loaded, use it
+    if (window.APP_CONFIG && window.APP_CONFIG.ENVIRONMENT) {
+        return window.APP_CONFIG.ENVIRONMENT === 'production';
+    }
+    // Fallback detection
+    return window.location.hostname !== 'localhost' && 
+           !window.location.hostname.includes('127.0.0.1') &&
+           !window.location.hostname.includes('192.168') &&
+           !window.location.hostname.includes('::1');
+}
+
+// Set production flag
+SEC_IS_PRODUCTION = secIsProduction();
 
 // ============================================
-// 2. DISABLE CONSOLE LOGGING IN PRODUCTION
+// 2. SAFE CONSOLE - Disable logging in production
 // ============================================
 
-if (isProduction) {
-    // Store original console methods (for emergency debugging)
-    window.__originalConsole = {
+if (SEC_IS_PRODUCTION && typeof window.__ORIGINAL_CONSOLE === 'undefined') {
+    // Store original console methods
+    window.__ORIGINAL_CONSOLE = {
         log: console.log,
         info: console.info,
         debug: console.debug,
@@ -26,107 +37,114 @@ if (isProduction) {
         error: console.error
     };
     
-    // Override console methods to prevent logging
+    // Override console methods in production only
     console.log = function() {};
     console.info = function() {};
     console.debug = function() {};
-    
-    // Keep warnings and errors for debugging purposes
-    // console.warn and console.error remain active
+    // Keep warnings and errors for debugging
 }
 
 // ============================================
 // 3. PREVENT DEV TOOLS ACCESS
 // ============================================
 
-// Disable right-click context menu
-document.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-// Disable keyboard shortcuts for dev tools
-document.addEventListener('keydown', function(e) {
-    // Prevent F12
-    if (e.key === 'F12') {
-        e.preventDefault();
-        return false;
-    }
+if (typeof window.__DEV_TOOLS_PREVENTED === 'undefined') {
+    window.__DEV_TOOLS_PREVENTED = true;
     
-    // Prevent Ctrl+Shift+I (DevTools)
-    if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
-        e.preventDefault();
-        return false;
+    // Only apply in production
+    if (SEC_IS_PRODUCTION) {
+        // Disable right-click context menu
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+        
+        // Disable keyboard shortcuts for dev tools
+        document.addEventListener('keydown', function(e) {
+            // Prevent F12
+            if (e.key === 'F12') {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Prevent Ctrl+Shift+I (DevTools)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Prevent Ctrl+Shift+J (Console)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Prevent Ctrl+U (View Source)
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Prevent Ctrl+S (Save)
+            if (e.ctrlKey && (e.key === 'S' || e.key === 's')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Prevent Ctrl+Shift+C (Inspect Element)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+                e.preventDefault();
+                return false;
+            }
+        });
     }
-    
-    // Prevent Ctrl+Shift+J (Console)
-    if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
-        e.preventDefault();
-        return false;
-    }
-    
-    // Prevent Ctrl+U (View Source)
-    if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
-        e.preventDefault();
-        return false;
-    }
-    
-    // Prevent Ctrl+S (Save)
-    if (e.ctrlKey && (e.key === 'S' || e.key === 's')) {
-        e.preventDefault();
-        return false;
-    }
-    
-    // Prevent Ctrl+Shift+C (Inspect Element)
-    if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
-        e.preventDefault();
-        return false;
-    }
-});
+}
 
 // ============================================
 // 4. DETECT DEV TOOLS OPENING
 // ============================================
 
-let devToolsOpen = false;
-let devToolsCheckInterval = null;
+let devToolsOpenFlag = false;
+let devToolsInterval = null;
 
-// Method 1: Using console.log detection
-const element = new Image();
-Object.defineProperty(element, 'id', {
+// Detection using console.log
+const detectionElement = new Image();
+Object.defineProperty(detectionElement, 'id', {
     get: function() {
-        devToolsOpen = true;
-        if (isDevelopment && window.__originalConsole) {
-            window.__originalConsole.warn('Dev tools detected!');
+        devToolsOpenFlag = true;
+        if (!SEC_IS_PRODUCTION && window.__ORIGINAL_CONSOLE) {
+            window.__ORIGINAL_CONSOLE.warn('Dev tools detected!');
         }
         return '';
     }
 });
 
-// Method 2: Using window size differential
-function detectDevTools() {
-    const widthThreshold = window.outerWidth - window.innerWidth > 160;
-    const heightThreshold = window.outerHeight - window.innerHeight > 160;
+// Detection using window size differential
+function detectDevToolsBySize() {
+    const widthDiff = window.outerWidth - window.innerWidth > 160;
+    const heightDiff = window.outerHeight - window.innerHeight > 160;
     
-    if (widthThreshold || heightThreshold) {
-        devToolsOpen = true;
-        if (isDevelopment && window.__originalConsole) {
-            window.__originalConsole.warn('Dev tools may be open (window size differential)');
+    if (widthDiff || heightDiff) {
+        devToolsOpenFlag = true;
+        if (!SEC_IS_PRODUCTION && window.__ORIGINAL_CONSOLE) {
+            window.__ORIGINAL_CONSOLE.warn('Dev tools may be open (window size differential)');
         }
     }
 }
 
 // Start dev tools detection
 function startDevToolsDetection() {
-    // Check every 2 seconds
-    devToolsCheckInterval = setInterval(() => {
-        devToolsOpen = false;
-        console.dir(element);
-        detectDevTools();
+    if (devToolsInterval) {
+        clearInterval(devToolsInterval);
+    }
+    
+    devToolsInterval = setInterval(() => {
+        devToolsOpenFlag = false;
+        console.dir(detectionElement);
+        detectDevToolsBySize();
         
-        if (devToolsOpen && isProduction) {
-            // Optional: Log to server or take action
-            // You could send a report to your backend
+        if (devToolsOpenFlag && SEC_IS_PRODUCTION) {
+            // Optional: Send report to server
             if (window.navigator && window.navigator.sendBeacon) {
                 window.navigator.sendBeacon('/api/security/devtools-detected', JSON.stringify({
                     timestamp: new Date().toISOString(),
@@ -135,24 +153,25 @@ function startDevToolsDetection() {
                 }));
             }
         }
-    }, 2000);
+    }, 5000);
 }
 
 // Only start detection in production
-if (isProduction) {
+if (SEC_IS_PRODUCTION) {
     startDevToolsDetection();
 }
 
 // ============================================
-// 5. PREVENT SELECTION AND COPYING (Optional)
+// 5. PREVENT SELECTION ON SENSITIVE ELEMENTS
 // ============================================
 
-// Disable text selection on sensitive elements
-function disableTextSelection() {
-    // Add CSS to prevent selection
+function addNoSelectStyles() {
+    if (document.getElementById('security-no-select-style')) return;
+    
     const style = document.createElement('style');
+    style.id = 'security-no-select-style';
     style.textContent = `
-        .no-select, .invoice-number, .amount, .sensitive-data {
+        .no-select, .sensitive-data, .invoice-number, .amount {
             user-select: none;
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -163,53 +182,72 @@ function disableTextSelection() {
 }
 
 // ============================================
-// 6. SECURE STORAGE HELPERS
+// 6. SECURE STORAGE WITH EXPIRATION
 // ============================================
 
-// Secure wrapper for localStorage with expiration
-const SecureStorage = {
+const SecureStorageHelper = {
     setItem: function(key, value, expirationHours = 24) {
-        const item = {
-            value: value,
-            expiry: new Date().getTime() + (expirationHours * 60 * 60 * 1000)
-        };
-        localStorage.setItem(key, JSON.stringify(item));
+        try {
+            const item = {
+                value: value,
+                expiry: new Date().getTime() + (expirationHours * 60 * 60 * 1000)
+            };
+            localStorage.setItem(`secure_${key}`, JSON.stringify(item));
+        } catch(e) {
+            // Storage might be full or disabled
+        }
     },
     
     getItem: function(key) {
-        const itemStr = localStorage.getItem(key);
-        if (!itemStr) return null;
-        
-        const item = JSON.parse(itemStr);
-        const now = new Date().getTime();
-        
-        if (now > item.expiry) {
-            localStorage.removeItem(key);
+        try {
+            const itemStr = localStorage.getItem(`secure_${key}`);
+            if (!itemStr) return null;
+            
+            const item = JSON.parse(itemStr);
+            const now = new Date().getTime();
+            
+            if (now > item.expiry) {
+                localStorage.removeItem(`secure_${key}`);
+                return null;
+            }
+            return item.value;
+        } catch(e) {
             return null;
         }
-        return item.value;
     },
     
     clearExpired: function() {
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            const itemStr = localStorage.getItem(key);
-            if (itemStr && itemStr.includes('expiry')) {
-                try {
-                    const item = JSON.parse(itemStr);
-                    if (new Date().getTime() > item.expiry) {
-                        localStorage.removeItem(key);
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('secure_')) {
+                    const itemStr = localStorage.getItem(key);
+                    if (itemStr) {
+                        try {
+                            const item = JSON.parse(itemStr);
+                            if (new Date().getTime() > item.expiry) {
+                                localStorage.removeItem(key);
+                            }
+                        } catch(e) {
+                            // Not an expiring item
+                        }
                     }
-                } catch(e) {
-                    // Not an expiring item
                 }
             }
-        }
+        } catch(e) {}
     },
     
     clearAll: function() {
-        localStorage.clear();
-        sessionStorage.clear();
+        try {
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('secure_')) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+        } catch(e) {}
     }
 };
 
@@ -217,7 +255,7 @@ const SecureStorage = {
 // 7. XSS PROTECTION - Sanitize User Input
 // ============================================
 
-function sanitizeInput(input) {
+function sanitizeUserInput(input) {
     if (!input) return '';
     if (typeof input !== 'string') return input;
     
@@ -230,65 +268,59 @@ function sanitizeInput(input) {
         .replace(/\//g, '&#x2F;');
 }
 
-// Override innerHTML setter for sensitive elements
-const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-Object.defineProperty(Element.prototype, 'innerHTML', {
-    get: function() {
-        return originalInnerHTML.get.call(this);
-    },
-    set: function(value) {
-        // Sanitize before setting
-        if (typeof value === 'string' && this.classList && 
-            (this.classList.contains('sanitize') || this.classList.contains('user-content'))) {
-            value = sanitizeInput(value);
-        }
-        return originalInnerHTML.set.call(this, value);
+// ============================================
+// 8. CSRF TOKEN MANAGEMENT
+// ============================================
+
+let csrfTokenValue = null;
+
+function generateCsrfToken() {
+    try {
+        const token = crypto.randomUUID ? crypto.randomUUID() : 
+                      Math.random().toString(36).substring(2) + Date.now().toString(36);
+        SecureStorageHelper.setItem('csrf_token', token, 24);
+        return token;
+    } catch(e) {
+        return Math.random().toString(36).substring(2);
     }
-});
-
-// ============================================
-// 8. CSRF PROTECTION TOKEN
-// ============================================
-
-let csrfToken = null;
-
-function generateCSRFToken() {
-    const token = crypto.randomUUID ? crypto.randomUUID() : 
-                  Math.random().toString(36).substring(2) + Date.now().toString(36);
-    SecureStorage.setItem('csrf_token', token, 24);
-    return token;
 }
 
-function getCSRFToken() {
-    if (!csrfToken) {
-        csrfToken = SecureStorage.getItem('csrf_token');
-        if (!csrfToken) {
-            csrfToken = generateCSRFToken();
+function getCsrfToken() {
+    if (!csrfTokenValue) {
+        csrfTokenValue = SecureStorageHelper.getItem('csrf_token');
+        if (!csrfTokenValue) {
+            csrfTokenValue = generateCsrfToken();
         }
     }
-    return csrfToken;
+    return csrfTokenValue;
 }
 
-// Add CSRF token to all fetch requests
-const originalFetch = window.fetch;
-window.fetch = function(url, options = {}) {
-    // Don't add token to external requests
-    if (url.toString().includes(window.location.origin) || url.toString().startsWith('/')) {
-        options.headers = options.headers || {};
-        options.headers['X-CSRF-Token'] = getCSRFToken();
-    }
-    return originalFetch.call(this, url, options);
-};
+// Add CSRF token to fetch requests (only if not already intercepting)
+if (typeof window.__FETCH_INTERCEPTED === 'undefined') {
+    window.__FETCH_INTERCEPTED = true;
+    const originalFetchFunction = window.fetch;
+    
+    window.fetch = function(url, options = {}) {
+        // Only add token to same-origin requests
+        if (url.toString().startsWith('/') || 
+            url.toString().includes(window.location.origin)) {
+            options.headers = options.headers || {};
+            if (!options.headers['X-CSRF-Token']) {
+                options.headers['X-CSRF-Token'] = getCsrfToken();
+            }
+        }
+        return originalFetchFunction.call(this, url, options);
+    };
+}
 
 // ============================================
-// 9. RATE LIMITING FOR API CALLS
+// 9. RATE LIMITING
 // ============================================
 
-const rateLimiter = {
+const ApiRateLimiter = {
     calls: new Map(),
     
     isAllowed: function(endpoint, limit = 10, windowMs = 60000) {
-        const key = `${endpoint}_${Date.now()}`;
         const now = Date.now();
         
         if (!this.calls.has(endpoint)) {
@@ -316,111 +348,95 @@ const rateLimiter = {
 };
 
 // ============================================
-// 10. SESSION TIMEOUT
+// 10. SESSION TIMEOUT MANAGEMENT
 // ============================================
 
-let sessionTimeout = null;
-const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 hours
+let sessionTimeoutId = null;
+const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // 8 hours
 
-function resetSessionTimeout() {
-    if (sessionTimeout) {
-        clearTimeout(sessionTimeout);
+function resetSessionTimer() {
+    if (sessionTimeoutId) {
+        clearTimeout(sessionTimeoutId);
     }
     
-    sessionTimeout = setTimeout(() => {
-        // Clear sensitive data on session timeout
-        SecureStorage.clearAll();
+    sessionTimeoutId = setTimeout(() => {
+        // Clear sensitive data
+        SecureStorageHelper.clearAll();
         
-        // Redirect to login if exists, otherwise reload
-        if (window.location.pathname !== '/index.html' && 
+        // Redirect to home page
+        if (!window.location.pathname.includes('index.html') && 
             window.location.pathname !== '/' &&
             !window.location.pathname.includes('login')) {
             window.location.href = '/index.html';
         }
         
-        if (window.__originalConsole) {
-            window.__originalConsole.info('Session timed out due to inactivity');
+        if (window.__ORIGINAL_CONSOLE) {
+            window.__ORIGINAL_CONSOLE.info('Session timed out due to inactivity');
         }
-    }, SESSION_DURATION);
+    }, SESSION_DURATION_MS);
 }
 
-// Reset session timeout on user activity
-const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
-activityEvents.forEach(event => {
-    document.addEventListener(event, resetSessionTimeout);
+// Track user activity
+const activityEventTypes = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+activityEventTypes.forEach(eventType => {
+    document.addEventListener(eventType, resetSessionTimer);
 });
 
-// Initialize session timeout
-resetSessionTimeout();
+// Start session timer
+resetSessionTimer();
 
 // ============================================
-// 11. SECURE COOKIE SETTINGS
+// 11. INITIALIZE SECURITY MODULE
 // ============================================
 
-function setSecureCookie(name, value, days = 7) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-    
-    document.cookie = `${name}=${value}; expires=${expires.toUTCString()}; path=/; Secure; SameSite=Strict; ${isProduction ? 'HttpOnly;' : ''}`;
-}
-
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-}
-
-// ============================================
-// 12. INITIALIZE SECURITY MODULE
-// ============================================
-
-function initSecurity() {
+function initializeSecurity() {
     // Clear expired storage items
-    SecureStorage.clearExpired();
+    SecureStorageHelper.clearExpired();
     
-    // Disable text selection on sensitive areas
-    disableTextSelection();
+    // Add no-select styles
+    addNoSelectStyles();
     
-    // Log security initialization (only in development)
-    if (isDevelopment && window.__originalConsole) {
-        window.__originalConsole.log('🔒 Security module initialized');
-        window.__originalConsole.log(`Environment: ${isProduction ? 'Production' : 'Development'}`);
+    // Log initialization (only in development)
+    if (!SEC_IS_PRODUCTION && window.__ORIGINAL_CONSOLE) {
+        window.__ORIGINAL_CONSOLE.log('🔒 Security module initialized');
+        window.__ORIGINAL_CONSOLE.log(`Environment: ${SEC_IS_PRODUCTION ? 'Production' : 'Development'}`);
     }
 }
 
 // Run initialization when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSecurity);
+    document.addEventListener('DOMContentLoaded', initializeSecurity);
 } else {
-    initSecurity();
+    initializeSecurity();
 }
 
 // ============================================
-// 13. EXPOSE SECURITY UTILITIES (Limited exposure)
+// 12. EXPOSE UTILITIES (Limited)
 // ============================================
 
-// Only expose necessary utilities globally
-window.Security = {
-    sanitize: sanitizeInput,
-    isProduction: isProduction,
-    getCSRFToken: getCSRFToken,
-    clearStorage: () => SecureStorage.clearAll(),
-    rateLimit: (endpoint, limit, windowMs) => rateLimiter.isAllowed(endpoint, limit, windowMs)
+window.SecurityUtils = {
+    sanitize: sanitizeUserInput,
+    isProduction: SEC_IS_PRODUCTION,
+    getCsrfToken: getCsrfToken,
+    clearStorage: () => SecureStorageHelper.clearAll(),
+    rateLimit: (endpoint, limit, windowMs) => ApiRateLimiter.isAllowed(endpoint, limit, windowMs),
+    secureStore: {
+        set: (key, value, hours) => SecureStorageHelper.setItem(key, value, hours),
+        get: (key) => SecureStorageHelper.getItem(key)
+    }
 };
 
-// Prevent modification of security objects
+// Freeze to prevent modification
 if (Object.freeze) {
-    Object.freeze(window.Security);
+    Object.freeze(window.SecurityUtils);
 }
 
 // ============================================
-// 14. HEARTBEAT FOR ACTIVE SESSION (Optional)
+// 13. HEARTBEAT (Production only)
 // ============================================
 
-if (isProduction) {
+if (SEC_IS_PRODUCTION) {
     setInterval(() => {
-        // Send heartbeat to server to keep session alive
         if (window.navigator && window.navigator.sendBeacon) {
             window.navigator.sendBeacon('/api/security/heartbeat', JSON.stringify({
                 timestamp: new Date().toISOString(),
@@ -431,18 +447,33 @@ if (isProduction) {
 }
 
 // ============================================
-// 15. CONSOLE CLEAR PROTECTION
+// 14. PREVENT CONSOLE CLEAR
 // ============================================
 
-// Prevent clearing of console (optional)
-if (isProduction) {
-    const consoleClear = console.clear;
+if (SEC_IS_PRODUCTION && console.clear) {
+    const originalClear = console.clear;
     console.clear = function() {
-        if (window.__originalConsole) {
-            window.__originalConsole.warn('Console clear prevented for security reasons');
+        if (window.__ORIGINAL_CONSOLE) {
+            window.__ORIGINAL_CONSOLE.warn('Console clear prevented');
         }
         return;
     };
 }
 
-console.log('✅ Security module loaded successfully');
+// ============================================
+// 15. CLEANUP ON PAGE UNLOAD
+// ============================================
+
+window.addEventListener('beforeunload', function() {
+    if (devToolsInterval) {
+        clearInterval(devToolsInterval);
+    }
+    if (sessionTimeoutId) {
+        clearTimeout(sessionTimeoutId);
+    }
+});
+
+// Only log if not in production
+if (!SEC_IS_PRODUCTION) {
+    console.log('✅ Security module loaded successfully');
+}
