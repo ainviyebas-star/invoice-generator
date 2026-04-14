@@ -5,3 +5,4 @@
 backend/
 .netlify/
 js/VITE_config.js
+node_modules/
